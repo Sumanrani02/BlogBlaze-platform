@@ -1,11 +1,12 @@
-import React from 'react'
+import React from "react";
+import BlazeRoutes from "./routes/BlazeRoutes";
 
 const App = () => {
   return (
-    <div>
-      <h1 className='bg-blue-400'>hello world</h1>
-    </div>
-  )
-}
+    <>
+      <BlazeRoutes />
+    </>
+  );
+};
 
-export default App
+export default App;
