@@ -1,4 +1,4 @@
-import Template from "../../component/Template";
+import Template from "../Template";
 import loginImg from "../../assets/login.png";
 
 function Login() {
