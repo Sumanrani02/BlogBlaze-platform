@@ -1,10 +1,12 @@
 import Template from "../Template";
 import loginImg from "../../assets/login.png";
+import { useNavigate } from "react-router-dom";
 
 function Login() {
+  const navigate = useNavigate();
+
   const handleLoginSuccess = () => {
-    // In a real app, this would redirect to a dashboard or home page
-    console.log("Login successful, would typically redirect now.");
+    navigate("/");
   };
   return (
     <div className="min-h-screen flex items-center justify-center bg-blue-light font-[Inter]">

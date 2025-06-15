@@ -62,8 +62,7 @@ const BlogPostCard = ({ post, isFeatured = false }) => {
           <span>{date}</span>
         </div>
         <a
-          //   href={`/posts/${id}`}
-          href={`/blogdetails`}
+            href={`/posts/${id}`}
           className={linkClasses}
         >
           Read More{" "}

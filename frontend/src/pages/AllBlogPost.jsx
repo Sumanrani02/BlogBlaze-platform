@@ -4,6 +4,7 @@ import NavBar from "../layout/Navbar";
 import Spinner from "../component/common/Spinner";
 import Footer from "../layout/Footer";
 import BlogPostCard from "../blog/BlogPostCard";
+import axios from "axios";
 
 const AllPostsPage = () => {
   const [posts, setPosts] = useState([]);
@@ -12,127 +13,13 @@ const AllPostsPage = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const allDummyPosts = useMemo(
-    () => [
-      {
-        id: 1,
-        title: "Mastering React Hooks: A Deep Dive",
-        excerpt:
-          "Unlock the power of React Hooks with this comprehensive guide, covering useState, useEffect, and custom hooks for cleaner, more efficient code.",
-        imageUrl:
-          "https://placehold.co/600x400/blue-base/pink-base?text=React+Hooks",
-        category: "Development",
-        author: "Jane Doe",
-        date: "May 10, 2025",
-        tags: ["React", "Hooks", "JavaScript"],
-      },
-      {
-        id: 2,
-        title: "The Art of Storytelling in Blogging",
-        excerpt:
-          "Learn how to captivate your audience and make your blog posts unforgettable by weaving compelling narratives.",
-        imageUrl:
-          "https://placehold.co/600x400/pink-base/blue-base?text=Storytelling",
-        category: "Writing",
-        author: "John Smith",
-        date: "April 28, 2025",
-        tags: ["Writing", "Content Creation"],
-      },
-      {
-        id: 3,
-        title: "AI in Everyday Life: Future or Present?",
-        excerpt:
-          "Explore the fascinating world of Artificial Intelligence and its growing impact on our daily routines and future prospects.",
-        imageUrl:
-          "https://placehold.co/600x400/blue-base/pink-base?text=AI+Future",
-        category: "Technology",
-        author: "Alice Johnson",
-        date: "April 15, 2025",
-        tags: ["AI", "Future Tech"],
-      },
-      {
-        id: 4,
-        title: "CSS Grid vs. Flexbox: When to Use Which",
-        excerpt:
-          "A practical guide to help you decide between CSS Grid and Flexbox for your next web layout.",
-        imageUrl:
-          "https://placehold.co/400x250/pink-base/blue-base?text=CSS+Layout",
-        category: "Web Design",
-        author: "Michael Green",
-        date: "June 05, 2025",
-        tags: ["CSS", "Web Design"],
-      },
-      {
-        id: 5,
-        title: "Boosting Your Blog's SEO: A Beginner's Guide",
-        excerpt:
-          "Simple yet effective strategies to improve your blog's search engine ranking and attract more readers.",
-        imageUrl:
-          "https://placehold.co/400x250/blue-base/pink-base?text=SEO+Tips",
-        category: "Marketing",
-        author: "Sarah Brown",
-        date: "May 30, 2025",
-        tags: ["SEO", "Marketing"],
-      },
-      {
-        id: 6,
-        title: "Productivity Hacks for Remote Developers",
-        excerpt:
-          "Maximize your efficiency and maintain focus while working from home with these proven tips and tools.",
-        imageUrl:
-          "https://placehold.co/400x250/pink-base/blue-base?text=Remote+Work",
-        category: "Productivity",
-        author: "David Lee",
-        date: "May 25, 2025",
-        tags: ["Productivity", "Remote Work"],
-      },
-      {
-        id: 7,
-        title: "Understanding JavaScript Closures",
-        excerpt:
-          "Demystifying one of JavaScript's most powerful and often misunderstood concepts: closures.",
-        imageUrl:
-          "https://placehold.co/400x250/blue-base/pink-base?text=JS+Closures",
-        category: "Development",
-        author: "Emily White",
-        date: "May 20, 2025",
-        tags: ["JavaScript", "Development"],
-      },
-      {
-        id: 8,
-        title: "The Future of Web Development: Trends to Watch",
-        excerpt:
-          "Stay ahead of the curve with a look at the emerging trends shaping the future of web development.",
-        imageUrl:
-          "https://placehold.co/400x250/pink-base/blue-base?text=Web+Trends",
-        category: "Development",
-        author: "Alex Kim",
-        date: "June 1, 2025",
-        tags: ["Web Development", "Trends"],
-      },
-      {
-        id: 9,
-        title: "Tips for Creative Writing and Idea Generation",
-        excerpt:
-          "Unleash your inner wordsmith with effective techniques for brainstorming and crafting engaging narratives.",
-        imageUrl:
-          "https://placehold.co/400x250/blue-base/pink-base?text=Creative+Writing",
-        category: "Writing",
-        author: "Sophia Chen",
-        date: "May 22, 2025",
-        tags: ["Creative Writing", "Ideas"],
-      },
-    ],
-    []
-  );
-
   useEffect(() => {
-    setLoading(true);
-    setError(null);
     const fetchPosts = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        setPosts(allDummyPosts);
+        const response = await axios.get("http://localhost:5000/api/posts"); // Replace with API 
+        setPosts(response.data);
       } catch (err) {
         setError("Failed to load blog posts. Please try again later.");
         console.error("Error fetching posts:", err);
@@ -140,15 +27,14 @@ const AllPostsPage = () => {
         setLoading(false);
       }
     };
+
     fetchPosts();
-  }, [allDummyPosts]);
+  }, []);
 
   const categories = useMemo(() => {
-    const uniqueCategories = new Set(
-      allDummyPosts.map((post) => post.category)
-    );
+    const uniqueCategories = new Set(posts.map((post) => post.category));
     return ["All", ...Array.from(uniqueCategories).sort()];
-  }, [allDummyPosts]);
+  }, [posts]);
 
   const filteredPosts = useMemo(() => {
     let filtered = posts;
@@ -173,23 +59,27 @@ const AllPostsPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col justify-center items-center bg-offwhite font-inter">
+      <>
         <NavBar />
-        <Spinner className="animate-spin h-16 w-16 text-blue-base" />
-        <p className="mt-4 text-xl text-blue-darker">Loading posts...</p>
-      </div>
+        <div className="min-h-screen flex flex-col justify-center items-center bg-offwhite font-inter">
+          <Spinner className="animate-spin h-16 w-16 text-blue-base" />
+          <p className="mt-4 text-xl text-blue-darker">Loading posts...</p>
+        </div>
+      </>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex flex-col justify-center items-center bg-offwhite font-inter">
+      <>
         <NavBar />
-        <p className="text-red-600 text-xl font-semibold">{error}</p>
-        <p className="text-blue-darker mt-2">
-          Please refresh the page or try again later.
-        </p>
-      </div>
+        <div className="min-h-screen flex flex-col justify-center items-center bg-offwhite font-inter">
+          <p className="text-red-600 text-xl font-semibold">{error}</p>
+          <p className="text-blue-darker mt-2">
+            Please refresh the page or try again later.
+          </p>
+        </div>
+      </>
     );
   }
 

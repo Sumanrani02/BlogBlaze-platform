@@ -3,7 +3,7 @@ import signupImg from "../../assets/signup.png";
 
 function SignUp() {
   const handleSignUpSuccess = () => {
-    setFormType("login"); // Switch to login form after successful signup
+    setFormType("login");
   };
   return (
     <div className="min-h-screen flex items-center justify-center bg-blue-light font-[Inter]">

@@ -2,6 +2,7 @@ import React from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
+import axios from "axios";
 
 // --- Inline SVG for Eye Open icon ---
 const EyeOpenIcon = ({ className = "h-6 w-6" }) => (
@@ -37,7 +38,6 @@ const EyeClosedIcon = ({ className = "h-6 w-6" }) => (
 );
 
 const LoginForm = ({ onLoginSuccess }) => {
-  // Added prop for success handling
   const { register, handleSubmit } = useForm();
   const [showPassword, setShowPassword] = React.useState(false);
 
@@ -45,11 +45,20 @@ const LoginForm = ({ onLoginSuccess }) => {
     setShowPassword((prev) => !prev);
   };
 
-  const onSubmit = (data) => {
-    console.log("Login Data:", data);
-    toast.success("Logged In Successfully!");
-    if (onLoginSuccess) {
-      onLoginSuccess(); // Call callback for success if needed, e.g., to change App state
+  const onSubmit = async (data) => {
+    try {
+      const response = await axios.post(
+        "http://localhost:5000/api/login",
+        data
+      ); // Replace with your API endpoint
+      console.log("Login Data:", response.data);
+      toast.success("Logged In Successfully!");
+      if (response) {
+        onLoginSuccess();
+      }
+    } catch (error) {
+      toast.error("Login failed. Please check your credentials.");
+      console.error("Login error:", error);
     }
   };
 
@@ -95,7 +104,6 @@ const LoginForm = ({ onLoginSuccess }) => {
               <EyeClosedIcon className="h-6 w-6" />
             )}
           </span>
-          {/* Forgot Password Link - Changed from <Link> to <a> */}
           <Link
             to="#"
             className="text-base max-w-max ml-auto text-blue-lighter mt-1 hover:underline"

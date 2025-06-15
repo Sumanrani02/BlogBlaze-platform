@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useMemo } from "react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 
@@ -67,8 +67,6 @@ const RichTextEditor = ({
         placeholder={placeholder}
         readOnly={readOnly}
         className="bg-white rounded-lg shadow-inner focus-within:ring-2 focus-within:ring-blue-light focus-within:border-blue-light"
-        // .quill .ql-editor { color: #1f2a3a; } /* text-blue-darker */
-        // .quill .ql-editor.ql-blank::before { color: #c9b7bc; } /* placeholder text-pink-dark */
       />
       {readOnly && (
         <div className="absolute inset-0 bg-white bg-opacity-50 flex items-center justify-center rounded-lg cursor-not-allowed">

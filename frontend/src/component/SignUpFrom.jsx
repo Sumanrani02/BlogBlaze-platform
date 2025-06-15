@@ -2,6 +2,7 @@ import React from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
+import axios from "axios";
 
 // --- Inline SVG for Eye Open icon ---
 const EyeOpenIcon = ({ className = "h-6 w-6" }) => (
@@ -36,7 +37,7 @@ const EyeClosedIcon = ({ className = "h-6 w-6" }) => (
   </svg>
 );
 
-const SignUpFrom = ({ onSignUpSuccess }) => {
+const SignUpForm = ({ onSignUpSuccess }) => {
   const {
     register,
     handleSubmit,
@@ -55,15 +56,21 @@ const SignUpFrom = ({ onSignUpSuccess }) => {
     setConfirmPasswordVisible((prev) => !prev);
   };
 
-  const onSubmit = (data) => {
-    console.log("Sign Up Data:", data);
-    toast.success("Account Created Successfully!");
-    if (onSignUpSuccess) {
-      onSignUpSuccess();
+  const onSubmit = async (data) => {
+    try {
+      const response = await axios.post("http://localhost:5000/api/signup", data); // Replace with your API endpoint
+      console.log("Sign Up Data:", response.data);
+      toast.success("Account Created Successfully!");
+      if (response) {
+        onSignUpSuccess();
+      }
+    } catch (error) {
+      toast.error("Sign Up failed. Please try again.");
+      console.error("Sign Up error:", error);
     }
   };
 
-  const password = watch("password"); // watch password value
+  const password = watch("password"); 
 
   return (
     <div>
@@ -197,4 +204,4 @@ const SignUpFrom = ({ onSignUpSuccess }) => {
   );
 };
 
-export default SignUpFrom;
+export default SignUpForm;

@@ -6,80 +6,37 @@ import {
   Edit,
   Save,
   XCircle,
-  Loader2,
   BookOpen,
-} from "lucide-react"; 
+} from "lucide-react";
 import Spinner from "../component/common/Spinner";
 import NavBar from "../layout/Navbar";
 import BlogPostCard from "../blog/BlogPostCard";
 import Footer from "../layout/Footer";
+import axios from "axios";
+import toast from "react-hot-toast";
 
 const ProfilePage = () => {
   const [user, setUser] = useState(null);
-  const [authoredPosts, setAuthoredPosts] = useState([]); 
+  const [authoredPosts, setAuthoredPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isEditing, setIsEditing] = useState(false); 
+  const [isEditing, setIsEditing] = useState(false);
   const [editedUsername, setEditedUsername] = useState("");
   const [editedPassword, setEditedPassword] = useState("");
 
-  const dummyUser = {
-    id: "user123",
-    username: "BlogBlazeUser",
-    email: "user@blogblaze.com",
-    memberSince: "January 1, 2024",
-    avatarUrl: "https://placehold.co/150x150/blue-light/offwhite?text=BB", 
-  };
-
-  const dummyAuthoredPosts = [
-    {
-      id: 101,
-      title: "My First Blog Post: A Journey into Web Dev",
-      excerpt:
-        "Sharing my experiences and challenges learning web development from scratch.",
-      imageUrl:
-        "https://placehold.co/400x250/pink-base/blue-base?text=My+Dev+Journey",
-      category: "Development",
-      author: "BlogBlazeUser",
-      date: "May 01, 2025",
-      tags: ["Beginner", "Web Dev"],
-    },
-    {
-      id: 102,
-      title: "Tips for Productive Remote Work",
-      excerpt:
-        "Strategies and tools to stay focused and efficient when working from home.",
-      imageUrl:
-        "https://placehold.co/400x250/blue-base/pink-base?text=Remote+Work+Tips",
-      category: "Productivity",
-      author: "BlogBlazeUser",
-      date: "May 15, 2025",
-      tags: ["Productivity", "Remote"],
-    },
-    {
-      id: 103,
-      title: "Understanding CSS Flexbox vs. Grid",
-      excerpt:
-        "A simple guide to help you choose between Flexbox and Grid for your next layout.",
-      imageUrl:
-        "https://placehold.co/400x250/pink-base/blue-base?text=Flexbox+Grid",
-      category: "Web Design",
-      author: "BlogBlazeUser",
-      date: "June 05, 2025",
-      tags: ["CSS", "Web Design"],
-    },
-  ];
-
   useEffect(() => {
-    setLoading(true);
-    setError(null);
     const fetchUserData = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        await new Promise((resolve) => setTimeout(resolve, 1500)); 
-        setUser(dummyUser);
-        setAuthoredPosts(dummyAuthoredPosts);
-        setEditedUsername(dummyUser.username); 
-        setEditedPassword(dummyUser.password);
+        const userResponse = await axios.get("http://localhost:5000/api/user"); // Replace with your API endpoint
+        const postsResponse = await axios.get(
+          "http://localhost:5000/api/posts/authored"
+        ); // Replace with your API endpoint
+        setUser(userResponse.data);
+        setAuthoredPosts(postsResponse.data);
+        setEditedUsername(userResponse.data.username);
+        setEditedPassword(userResponse.data.password);
       } catch (err) {
         setError("Failed to load profile. Please try again.");
         console.error("Error fetching user profile:", err);
@@ -93,24 +50,28 @@ const ProfilePage = () => {
   // Handle saving profile changes
   const handleSaveProfile = async (e) => {
     e.preventDefault();
-    setLoading(true); 
+    setLoading(true);
     setError(null);
     try {
       console.log("Saving profile:", {
         username: editedUsername,
         password: editedPassword,
       });
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-    
+      await axios.put("http://localhost:5000/api/user", {
+        // Replace with your API endpoint
+        username: editedUsername,
+        password: editedPassword,
+      });
+
       setUser((prevUser) => ({
         ...prevUser,
         username: editedUsername,
         password: editedPassword,
       }));
-      setIsEditing(false); 
-      alert("Profile updated successfully!");
+      setIsEditing(false);
+      toast.success("Profile updated successfully!");
     } catch (err) {
-      setErrorMessage("Failed to save profile. Please try again.");
+      setError("Failed to save profile. Please try again.");
       console.error("Error saving profile:", err);
     } finally {
       setLoading(false);
@@ -127,34 +88,40 @@ const ProfilePage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col justify-center items-center bg-offwhite font-inter">
+      <>
         <NavBar />
-        <Spinner className="animate-spin h-16 w-16 text-blue-base" />
-        <p className="mt-4 text-xl text-blue-darker">Loading profile...</p>
-      </div>
+        <div className="min-h-screen flex flex-col justify-center items-center bg-offwhite font-inter">
+          <Spinner className="animate-spin h-16 w-16 text-blue-base" />
+          <p className="mt-4 text-xl text-blue-darker">Loading profile...</p>
+        </div>
+      </>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex flex-col justify-center items-center bg-offwhite font-inter">
+      <>
         <NavBar />
-        <p className="text-red-600 text-xl font-semibold">{error}</p>
-        <p className="text-blue-darker mt-2">
-          Please refresh the page or try again later.
-        </p>
-      </div>
+        <div className="min-h-screen flex flex-col justify-center items-center bg-offwhite font-inter">
+          <p className="text-red-600 text-xl font-semibold">{error}</p>
+          <p className="text-blue-darker mt-2">
+            Please refresh the page or try again later.
+          </p>
+        </div>
+      </>
     );
   }
 
   if (!user) {
     return (
-      <div className="min-h-screen flex flex-col justify-center items-center bg-offwhite font-inter">
+      <>
         <NavBar />
-        <p className="text-blue-darker text-xl font-semibold">
-          User profile not found. Please log in.
-        </p>
-      </div>
+        <div className="min-h-screen flex flex-col justify-center items-center bg-offwhite font-inter">
+          <p className="text-blue-darker text-xl font-semibold">
+            User profile not found. Please log in.
+          </p>
+        </div>
+      </>
     );
   }
 
@@ -163,10 +130,6 @@ const ProfilePage = () => {
       <NavBar />
 
       <main className="flex-grow container mx-auto py-12 px-4 sm:px-6 lg:px-8 max-w-5xl">
-        <h1 className="text-5xl font-extrabold text-blue-darker mb-10 text-center leading-tight">
-          My Profile
-        </h1>
-
         {/* Profile Information Section */}
         <section className="bg-white rounded-xl shadow-lg p-6 md:p-10 mb-10 border border-pink-base">
           <div className="flex flex-col md:flex-row items-center md:items-start gap-8">

@@ -1,103 +1,70 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Navbar from "../layout/Navbar";
 import { BookOpen, Rss, ArrowRight, Sparkles, Star } from "lucide-react";
 import Footer from "../layout/Footer";
 import BlogPostCard from "../blog/BlogPostCard";
+import bgImg from "../assets/hero-section-bg3.jpg";
+import axios from "axios";
 
 const HomePage = () => {
-  const featuredPosts = [
-    {
-      id: 1,
-      title: "Mastering React Hooks: A Deep Dive",
-      excerpt:
-        "Unlock the power of React Hooks with this comprehensive guide, covering useState, useEffect, and custom hooks for cleaner, more efficient code.",
-      imageUrl:
-        "https://placehold.co/600x400/blue-base/pink-base?text=React+Hooks",
-      category: "Development",
-      author: "Jane Doe",
-      date: "May 10, 2025",
-    },
-    {
-      id: 2,
-      title: "The Art of Storytelling in Blogging",
-      excerpt:
-        "Learn how to captivate your audience and make your blog posts unforgettable by weaving compelling narratives.",
-      imageUrl:
-        "https://placehold.co/600x400/pink-base/blue-base?text=Storytelling",
-      category: "Writing",
-      author: "John Smith",
-      date: "April 28, 2025",
-    },
-    {
-      id: 3,
-      title: "AI in Everyday Life: Future or Present?",
-      excerpt:
-        "Explore the fascinating world of Artificial Intelligence and its growing impact on our daily routines and future prospects.",
-      imageUrl:
-        "https://placehold.co/600x400/blue-base/pink-base?text=AI+Future",
-      category: "Technology",
-      author: "Alice Johnson",
-      date: "April 15, 2025",
-    },
-  ];
+  const [featuredPosts, setFeaturedPosts] = useState([]);
+  const [recentPosts, setRecentPosts] = useState([]);
+  const [email, setEmail] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const recentPosts = [
-    {
-      id: 4,
-      title: "CSS Grid vs. Flexbox: When to Use Which",
-      excerpt:
-        "A practical guide to help you decide between CSS Grid and Flexbox for your next web layout.",
-      imageUrl:
-        "https://placehold.co/400x250/pink-base/blue-base?text=CSS+Layout",
-      category: "Web Design",
-      author: "Michael Green",
-      date: "June 05, 2025",
-    },
-    {
-      id: 5,
-      title: "Boosting Your Blog's SEO: A Beginner's Guide",
-      excerpt:
-        "Simple yet effective strategies to improve your blog's search engine ranking and attract more readers.",
-      imageUrl:
-        "https://placehold.co/400x250/blue-base/pink-base?text=SEO+Tips",
-      category: "Marketing",
-      author: "Sarah Brown",
-      date: "May 30, 2025",
-    },
-    {
-      id: 6,
-      title: "Productivity Hacks for Remote Developers",
-      excerpt:
-        "Maximize your efficiency and maintain focus while working from home with these proven tips and tools.",
-      imageUrl:
-        "https://placehold.co/400x250/pink-base/blue-base?text=Remote+Work",
-      category: "Productivity",
-      author: "David Lee",
-      date: "May 25, 2025",
-    },
-    {
-      id: 7,
-      title: "Understanding JavaScript Closures",
-      excerpt:
-        "Demystifying one of JavaScript's most powerful and often misunderstood concepts: closures.",
-      imageUrl:
-        "https://placehold.co/400x250/blue-base/pink-base?text=JS+Closures",
-      category: "Development",
-      author: "Emily White",
-      date: "May 20, 2025",
-    },
-  ];
+  useEffect(() => {
+    // Fetch featured posts
+    axios
+      .get("http://localhost:5000/api/posts/featured")
+      .then((response) => setFeaturedPosts(response.data))
+      .catch((error) => console.error("Error fetching featured posts:", error));
 
+    // Fetch recent posts
+    axios
+      .get("http://localhost:5000/api/posts/recent")
+      .then((response) => setRecentPosts(response.data))
+      .catch((error) => console.error("Error fetching recent posts:", error));
+  }, []);
+
+  // Handle newsletter subscription
+  const handleSubscribe = () => {
+    if (!email) {
+      alert("Please enter a valid email address.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    axios
+      .post("http://localhost:5000/api/newsletter/subscribe", { email })
+      .then((response) => {
+        alert("Successfully subscribed!");
+        setEmail("");
+      })
+      .catch((error) => {
+        alert("Subscription failed. Please try again.");
+        console.error("Subscription error:", error);
+      })
+      .finally(() => setIsSubmitting(false));
+  };
   return (
     <div className="min-h-screen bg-offwhite flex flex-col font-inter">
       {/* Navigation Bar */}
       <Navbar />
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-blue-base to-blue-dark text-pink-base py-20 px-4 sm:px-6 lg:px-8 shadow-inner">
+
+      <section
+        className=" text-pink-base py-20 px-4 sm:px-6 lg:px-8 shadow-inner"
+        style={{
+          backgroundImage: `url(${bgImg})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          opacity: "0.7",
+        }}
+      >
         <div className="container mx-auto text-center">
           <Sparkles className="mx-auto h-16 w-16 mb-4 text-pink-base" />
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold mb-4 leading-tight rounded-lg p-2 inline-block bg-white bg-opacity-10 backdrop-filter backdrop-blur-sm">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold mb-4 leading-tight rounded-lg p-2 inline-block bg-opacity-10 backdrop-filter backdrop-blur-sm">
             Welcome to BlogBlaze
           </h1>
           <p className="text-xl sm:text-2xl mb-8 max-w-3xl mx-auto opacity-90">
@@ -157,9 +124,15 @@ const HomePage = () => {
               type="email"
               placeholder="Enter your email"
               className="p-3 rounded-full border border-pink-darker text-blue-darker w-full sm:w-2/3 focus:ring-2 focus:ring-blue-light focus:outline-none shadow-inner"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
-            <button className="px-6 py-3 bg-pink-base text-blue-base font-bold rounded-full shadow-md hover:bg-pink-light hover:text-blue-dark transition-colors duration-300 transform hover:scale-105 w-full sm:w-auto">
-              Subscribe
+            <button
+              onClick={handleSubscribe}
+              className="px-6 py-3 bg-pink-base text-blue-base font-bold rounded-full shadow-md hover:bg-pink-light hover:text-blue-dark transition-colors duration-300 transform hover:scale-105 w-full sm:w-auto"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Subscribing..." : "Subscribe"}
             </button>
           </div>
         </div>
