@@ -3,7 +3,7 @@ import axios from "axios";
 import { Plus, Tag, List, CheckCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-import NavBar from "../layout/Navbar";
+import Navbar from "../layout/Navbar";
 import RichTextEditor from "../blog/RichTextEditor";
 import Spinner from "../component/common/Spinner";
 import Footer from "../layout/Footer";
@@ -99,7 +99,7 @@ const CreateBlogPost = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-offwhite font-inter">
-      <NavBar />
+      <Navbar />
 
       <main className="flex-grow container mx-auto py-12 px-4 sm:px-6 lg:px-8 max-w-5xl">
         <h1 className="text-5xl font-extrabold text-blue-darker mb-10 text-center leading-tight">

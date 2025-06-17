@@ -2,7 +2,8 @@ import React from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
-import axios from "axios";
+import { useDispatch } from "react-redux";
+import { loginUser } from "../redux/authSlice";
 
 // --- Inline SVG for Eye Open icon ---
 const EyeOpenIcon = ({ className = "h-6 w-6" }) => (
@@ -38,6 +39,7 @@ const EyeClosedIcon = ({ className = "h-6 w-6" }) => (
 );
 
 const LoginForm = ({ onLoginSuccess }) => {
+  const dispatch = useDispatch();
   const { register, handleSubmit } = useForm();
   const [showPassword, setShowPassword] = React.useState(false);
 
@@ -46,19 +48,13 @@ const LoginForm = ({ onLoginSuccess }) => {
   };
 
   const onSubmit = async (data) => {
-    try {
-      const response = await axios.post(
-        "http://localhost:5000/api/auth/login",
-        data
-      ); // Replace with your API endpoint
-      console.log("Login Data:", response.data);
+    const resultAction = await dispatch(loginUser(data));
+
+    if (loginUser.fulfilled.match(resultAction)) {
       toast.success("Logged In Successfully!");
-      if (response) {
-        onLoginSuccess();
-      }
-    } catch (error) {
-      toast.error("Login failed. Please check your credentials.");
-      console.error("Login error:", error);
+      onLoginSuccess();
+    } else {
+      toast.error(resultAction.payload || "Login failed");
     }
   };
 

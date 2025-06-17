@@ -11,7 +11,7 @@ import {
   MessageSquare,
   Heart,
 } from "lucide-react";
-import NavBar from "../layout/Navbar";
+import Navbar from "../layout/Navbar";
 import Footer from "../layout/Footer";
 import Spinner from "../component/common/Spinner";
 import axios from "axios";
@@ -49,7 +49,7 @@ const BlogDetailPage = () => {
   if (loading) {
     return (
       <>
-        <NavBar />
+        <Navbar />
         <div className="min-h-screen flex flex-col justify-center items-center bg-offwhite font-inter">
           <Spinner className="animate-spin h-16 w-16 text-blue-base" />
           <p className="mt-4 text-xl text-blue-darker">Loading post...</p>
@@ -61,7 +61,7 @@ const BlogDetailPage = () => {
   if (error) {
     return (
       <>
-        <NavBar />
+        <Navbar />
         <div className="min-h-screen flex flex-col justify-center items-center bg-offwhite font-inter">
           <p className="text-red-600 text-xl font-semibold">{error}</p>
           <p className="text-blue-darker mt-2">
@@ -75,7 +75,7 @@ const BlogDetailPage = () => {
   if (!post) {
     return (
       <>
-        <NavBar />
+        <Navbar />
         <div className="min-h-screen flex flex-col justify-center items-center bg-offwhite font-inter">
           <p className="text-blue-darker text-xl font-semibold">
             Post not found.
@@ -87,7 +87,7 @@ const BlogDetailPage = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-offwhite font-inter">
-      <NavBar />
+      <Navbar />
 
       <main className="flex-grow container mx-auto py-12 px-4 sm:px-6 lg:px-8 max-w-4xl">
         <article className="bg-white rounded-xl shadow-lg p-6 md:p-10 border border-pink-base">

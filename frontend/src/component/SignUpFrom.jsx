@@ -2,7 +2,8 @@ import React from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
-import axios from "axios";
+import { useDispatch } from "react-redux";
+import { registerUser } from "../redux/authSlice";
 
 // --- Inline SVG for Eye Open icon ---
 const EyeOpenIcon = ({ className = "h-6 w-6" }) => (
@@ -38,6 +39,7 @@ const EyeClosedIcon = ({ className = "h-6 w-6" }) => (
 );
 
 const SignUpForm = ({ onSignUpSuccess }) => {
+  const dispatch = useDispatch();
   const {
     register,
     handleSubmit,
@@ -57,20 +59,18 @@ const SignUpForm = ({ onSignUpSuccess }) => {
   };
 
   const onSubmit = async (data) => {
-    try {
-      const response = await axios.post("http://localhost:5000/api/auth/register", data); // Replace with your API endpoint
-      console.log("Sign Up Data:", response.data);
-      toast.success("Account Created Successfully!");
-      if (response) {
-        onSignUpSuccess();
-      }
-    } catch (error) {
-      toast.error("Sign Up failed. Please try again.");
-      console.error("Sign Up error:", error);
+    const { confirmPassword, ...registerData } = data;
+    const resultAction = await dispatch(registerUser(registerData));
+
+    if (registerUser.fulfilled.match(resultAction)) {
+      toast.success(resultAction.payload || "Account Created Successfully!");
+      onSignUpSuccess();
+    } else {
+      toast.error(resultAction.payload || "Sign Up failed. Please try again.");
     }
   };
 
-  const password = watch("password"); 
+  const password = watch("password");
 
   return (
     <div>
@@ -106,19 +106,18 @@ const SignUpForm = ({ onSignUpSuccess }) => {
           </label>
         </div>
         {/* Username Field */}
-<label className="w-full mt-4">
-  <p className="text-[0.875rem] text-offwhite mb-1 leading-[1.375rem]">
-    Username <sup className="text-red-300">*</sup>
-  </p>
-  <input
-    required
-    type="text"
-    {...register("username")}
-    placeholder="Enter username"
-    className="bg-blue-base rounded-md text-offwhite w-full p-[12px] placeholder:text-pink-light focus:outline-none focus:ring-2 focus:ring-offwhite"
-  />
-</label>
-
+        <label className="w-full mt-4">
+          <p className="text-[0.875rem] text-offwhite mb-1 leading-[1.375rem]">
+            Username <sup className="text-red-300">*</sup>
+          </p>
+          <input
+            required
+            type="text"
+            {...register("username")}
+            placeholder="Enter username"
+            className="bg-blue-base rounded-md text-offwhite w-full p-[12px] placeholder:text-pink-light focus:outline-none focus:ring-2 focus:ring-offwhite"
+          />
+        </label>
 
         {/* Email Address */}
         <label className="w-full mt-4">

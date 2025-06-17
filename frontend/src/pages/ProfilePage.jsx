@@ -1,4 +1,9 @@
+
 import React, { useState, useEffect } from "react";
+import { useSelector } from "react-redux"; 
+import { useNavigate } from "react-router-dom"; 
+import toast from "react-hot-toast"; 
+import { Link } from 'react-router-dom';
 import {
   User,
   Mail,
@@ -7,143 +12,160 @@ import {
   Save,
   XCircle,
   BookOpen,
+  KeyRound 
 } from "lucide-react";
+
 import Spinner from "../component/common/Spinner";
-import NavBar from "../layout/Navbar";
+import Navbar from "../layout/Navbar";
 import BlogPostCard from "../blog/BlogPostCard";
 import Footer from "../layout/Footer";
-import axios from "axios";
-import toast from "react-hot-toast";
 
 const ProfilePage = () => {
-  const [user, setUser] = useState(null);
-  const [authoredPosts, setAuthoredPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedUsername, setEditedUsername] = useState("");
-  const [editedPassword, setEditedPassword] = useState("");
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const userResponse = await axios.get("http://localhost:5000/api/user"); // Replace with your API endpoint
-        const postsResponse = await axios.get(
-          "http://localhost:5000/api/posts/authored"
-        ); // Replace with your API endpoint
-        setUser(userResponse.data);
-        setAuthoredPosts(postsResponse.data);
-        setEditedUsername(userResponse.data.username);
-        setEditedPassword(userResponse.data.password);
-      } catch (err) {
-        setError("Failed to load profile. Please try again.");
-        console.error("Error fetching user profile:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchUserData();
-  }, []);
+  const { isAuthenticated, user: reduxUser, loading: authLoading, error: authError } = useSelector((state) => state.auth);
+  const navigate = useNavigate();
 
-  // Handle saving profile changes
+  const [userProfile, setUserProfile] = useState(null); 
+  const [authoredPosts, setAuthoredPosts] = useState([]); 
+  const [pageLoading, setPageLoading] = useState(true); 
+  const [pageError, setPageError] = useState(null); 
+
+  const [isEditing, setIsEditing] = useState(false); 
+  const [editedUsername, setEditedUsername] = useState('');
+  const [editedEmail, setEditedEmail] = useState(''); 
+
+useEffect(() => {
+  // Check if authentication is loading
+  if (authLoading) {
+    setPageLoading(true);
+    return;
+  }
+
+  // If the user is not authenticated, redirect to login
+  if (!isAuthenticated) {
+    navigate('/login');
+    return; 
+  }
+
+  // Fetch profile data if authenticated
+  const fetchProfileData = async () => {
+    setPageLoading(true);
+    setPageError(null);
+    try {
+      const fetchedUser  = {
+        id: reduxUser ?.id || 'dummyId123',
+        username: reduxUser ?.username || 'GuestUser ',
+        email: reduxUser ?.email || 'guest@example.com',
+        memberSince: 'January 1, 2024', 
+        avatarUrl: 'https://placehold.co/150x150/blue-light/offwhite?text=BB'
+      };
+      setUserProfile(fetchedUser );
+      setEditedUsername(fetchedUser .username);
+      setEditedEmail(fetchedUser .email); 
+
+      const userPosts = [
+        { id: 101, title: "My First Blog Post", excerpt: "Sharing experiences...", imageUrl: "https://placehold.co/400x250/pink-base/blue-base?text=My+Dev+Journey", category: "Development", author: fetchedUser .username, date: "May 01, 2025", tags: ["Beginner"] },
+        { id: 102, title: "Tips for Productive Remote Work", excerpt: "Strategies...", imageUrl: "https://placehold.co/400x250/blue-base/pink-base?text=Remote+Work+Tips", category: "Productivity", author: fetchedUser .username, date: "May 15, 2025", tags: ["Remote"] },
+        { id: 103, title: "Understanding CSS Flexbox vs. Grid", excerpt: "A simple guide...", imageUrl: "https://placehold.co/400x250/pink-base/blue-base?text=Flexbox+Grid", category: "Web Design", author: fetchedUser .username, date: "June 05, 2025", tags: ["CSS"] },
+      ]; 
+      setAuthoredPosts(userPosts);
+      await new Promise(resolve => setTimeout(resolve, 500)); 
+
+    } catch (err) {
+      console.error("Error fetching profile data:", err);
+      setPageError(err.response?.data?.message || "Failed to load profile. Please try again.");
+    } finally {
+      setPageLoading(false);
+    }
+  };
+
+  // Fetch profile data only if authenticated
+  fetchProfileData();
+}, [isAuthenticated, authLoading, reduxUser , navigate]);
+
+
   const handleSaveProfile = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
-    try {
-      console.log("Saving profile:", {
-        username: editedUsername,
-        password: editedPassword,
-      });
-      await axios.put("http://localhost:5000/api/user", {
-        // Replace with your API endpoint
-        username: editedUsername,
-        password: editedPassword,
-      });
+    setPageLoading(true);
+    setPageError(null); 
 
-      setUser((prevUser) => ({
-        ...prevUser,
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000)); 
+      const updatedUser = {
+        ...userProfile,
         username: editedUsername,
-        password: editedPassword,
-      }));
-      setIsEditing(false);
-      toast.success("Profile updated successfully!");
+        email: editedEmail
+      };
+
+      setUserProfile(updatedUser); 
+      setIsEditing(false); 
+      toast.success("Profile updated successfully!"); 
     } catch (err) {
-      setError("Failed to save profile. Please try again.");
       console.error("Error saving profile:", err);
+      setPageError(err.response?.data?.message || 'Failed to save profile. Please try again.');
     } finally {
-      setLoading(false);
+      setPageLoading(false);
     }
   };
 
+  // Handle canceling edit mode
   const handleCancelEdit = () => {
     setIsEditing(false);
-    if (user) {
-      setEditedUsername(user.username);
-      setEditedPassword(user.password);
+    if (userProfile) {
+      setEditedUsername(userProfile.username);
+      setEditedEmail(userProfile.email);
     }
   };
 
-  if (loading) {
+  const handleChangePasswordClick = () => {
+    navigate('/change-password'); 
+  };
+
+  if (pageLoading || authLoading) {
     return (
       <>
-        <NavBar />
-        <div className="min-h-screen flex flex-col justify-center items-center bg-offwhite font-inter">
-          <Spinner className="animate-spin h-16 w-16 text-blue-base" />
-          <p className="mt-4 text-xl text-blue-darker">Loading profile...</p>
-        </div>
+        <Navbar />
+      <div className="min-h-screen flex flex-col justify-center items-center bg-offwhite font-inter">
+        <Spinner className="h-16 w-16 text-blue-base" />
+        <p className="mt-4 text-xl text-blue-darker">Loading profile...</p>
+      </div>
       </>
     );
   }
 
-  if (error) {
+  // If there's an authentication error or page-specific error
+  if (authError || pageError) {
     return (
       <>
-        <NavBar />
-        <div className="min-h-screen flex flex-col justify-center items-center bg-offwhite font-inter">
-          <p className="text-red-600 text-xl font-semibold">{error}</p>
-          <p className="text-blue-darker mt-2">
-            Please refresh the page or try again later.
-          </p>
-        </div>
-      </>
-    );
-  }
-
-  if (!user) {
-    return (
-      <>
-        <NavBar />
-        <div className="min-h-screen flex flex-col justify-center items-center bg-offwhite font-inter">
-          <p className="text-blue-darker text-xl font-semibold">
-            User profile not found. Please log in.
-          </p>
-        </div>
+        <Navbar />
+      <div className="min-h-screen flex flex-col justify-center items-center bg-offwhite font-inter">
+        <p className="text-red-600 text-xl font-semibold">{authError || pageError}</p>
+        <p className="text-blue-darker mt-2">
+          Please refresh the page or try again later.
+        </p>
+      </div>
       </>
     );
   }
 
   return (
     <div className="min-h-screen flex flex-col bg-offwhite font-inter">
-      <NavBar />
+      <Navbar />
 
       <main className="flex-grow container mx-auto py-12 px-4 sm:px-6 lg:px-8 max-w-5xl">
+        <h1 className="text-5xl font-extrabold text-blue-darker mb-10 text-center leading-tight">
+          My Profile
+        </h1>
+
         {/* Profile Information Section */}
         <section className="bg-white rounded-xl shadow-lg p-6 md:p-10 mb-10 border border-pink-base">
           <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
             {/* Avatar */}
             <div className="flex-shrink-0">
               <img
-                src={user.avatarUrl}
-                alt={`${user.username}'s avatar`}
+                src={userProfile.avatarUrl || "https://placehold.co/150x150/blue-dark/pink-light?text=User"} // Fallback for avatar
+                alt={`${userProfile.username}'s avatar`}
                 className="w-32 h-32 rounded-full object-cover border-4 border-blue-base shadow-md"
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src =
-                    "https://placehold.co/150x150/blue-dark/pink-light?text=User";
-                }}
               />
             </div>
 
@@ -153,21 +175,27 @@ const ProfilePage = () => {
                 // Display Mode
                 <div className="space-y-3">
                   <h2 className="text-3xl font-bold text-blue-base">
-                    {user.username}
+                    {userProfile.username}
                   </h2>
                   <p className="text-blue-darker flex items-center justify-center md:justify-start text-lg">
                     <Mail className="h-5 w-5 mr-2 text-blue-light" />{" "}
-                    {user.email}
+                    {userProfile.email}
                   </p>
                   <p className="text-gray-600 flex items-center justify-center md:justify-start text-sm">
                     <Calendar className="h-4 w-4 mr-2 text-blue-light" /> Member
-                    since: {user.memberSince}
+                    since: {userProfile.memberSince || 'N/A'} 
                   </p>
                   <button
                     onClick={() => setIsEditing(true)}
                     className="mt-4 inline-flex items-center px-6 py-2 bg-pink-base text-blue-base font-semibold rounded-full shadow-md hover:bg-pink-dark transition-colors duration-300 transform hover:scale-105"
                   >
                     <Edit className="h-4 w-4 mr-2" /> Edit Profile
+                  </button>
+                  <button
+                    onClick={handleChangePasswordClick}
+                    className="mt-4 ml-3 inline-flex items-center px-6 py-2 bg-blue-light text-offwhite font-semibold rounded-full shadow-md hover:bg-blue-base transition-colors duration-300 transform hover:scale-105"
+                  >
+                    <KeyRound className="h-4 w-4 mr-2" /> Change Password
                   </button>
                 </div>
               ) : (
@@ -187,34 +215,34 @@ const ProfilePage = () => {
                       onChange={(e) => setEditedUsername(e.target.value)}
                       className="w-full p-3 rounded-md border border-pink-darker bg-offwhite text-blue-darker focus:outline-none focus:ring-2 focus:ring-blue-light"
                       required
+                      disabled={pageLoading} // Disable inputs during save
                     />
                   </div>
                   <div>
                     <label
-                      htmlFor="edit-password"
+                      htmlFor="edit-email"
                       className="block text-blue-darker text-sm font-bold mb-1"
                     >
-                      Password
+                      Email
                     </label>
                     <input
-                      type="password"
-                      id="edit-password"
-                      value={editedPassword}
-                      placeholder="change-password"
-                      onChange={(e) => setEditedPassword(e.target.value)}
+                      type="email"
+                      id="edit-email"
+                      value={editedEmail}
+                      onChange={(e) => setEditedEmail(e.target.value)}
                       className="w-full p-3 rounded-md border border-pink-darker bg-offwhite text-blue-darker focus:outline-none focus:ring-2 focus:ring-blue-light"
                       required
+                      disabled={pageLoading} 
                     />
                   </div>
-
                   <div className="flex gap-4 mt-4 justify-center md:justify-start">
                     <button
                       type="submit"
                       className="inline-flex items-center px-6 py-2 bg-blue-base text-pink-base font-semibold rounded-full shadow-md hover:bg-blue-dark transition-colors duration-300 transform hover:scale-105"
-                      disabled={loading}
+                      disabled={pageLoading}
                     >
-                      {loading ? (
-                        <Spinner className="animate-spin h-4 w-4 mr-2" />
+                      {pageLoading ? (
+                        <Spinner className="h-4 w-4 mr-2" />
                       ) : (
                         <Save className="h-4 w-4 mr-2" />
                       )}{" "}
@@ -224,14 +252,14 @@ const ProfilePage = () => {
                       type="button"
                       onClick={handleCancelEdit}
                       className="inline-flex items-center px-6 py-2 bg-pink-darker text-offwhite font-semibold rounded-full shadow-md hover:bg-pink-dark transition-colors duration-300 transform hover:scale-105"
-                      disabled={loading}
+                      disabled={pageLoading}
                     >
                       <XCircle className="h-4 w-4 mr-2" /> Cancel
                     </button>
                   </div>
-                  {error && (
+                  {pageError && (
                     <p className="text-red-600 text-sm mt-2 text-center md:text-left">
-                      {error}
+                      {pageError}
                     </p>
                   )}
                 </form>
@@ -258,12 +286,12 @@ const ProfilePage = () => {
               </p>
               <p className="text-lg">
                 Why not{" "}
-                <a
-                  href="/create-blog"
-                  className="text-blue-base hover:underline font-medium"
+                <Link
+                  to="/create-blog"
+                  className="text-blue-base bg-pink-light py-2 rounded-2xl px-2  hover:underline font-medium "
                 >
                   create your first blog post
-                </a>
+                </Link>
                 ?
               </p>
             </div>

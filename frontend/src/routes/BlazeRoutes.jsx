@@ -17,20 +17,20 @@ const BlazeRoutes = () => {
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
-        <Route path="/blog" element={<AllPostsPage />} />
+        <Route path="/posts" element={<AllPostsPage />} />
         <Route path="/posts/:id" element={<BlogDetailPage />} />
 
         {/* Protected Routes */}
         <Route
-          path="/write"
+          path="/create-blog"
           element={
             <ProtectedRoute>
-              <CreateBlogPost/>
-        </ProtectedRoute>
+              <CreateBlogPost />
+            </ProtectedRoute>
           }
         />
         <Route
-          path="/profilepage"
+          path="/profile-page"
           element={
             <ProtectedRoute>
               <ProfilePage />
@@ -41,7 +41,6 @@ const BlazeRoutes = () => {
         {/* Catch-All Route for 404 */}
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
-
     </>
   );
 };

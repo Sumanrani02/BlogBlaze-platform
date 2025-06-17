@@ -1,9 +1,11 @@
 import Template from "../Template";
 import signupImg from "../../assets/signup.png";
+import { useNavigate } from "react-router-dom";
 
 function SignUp() {
+  const navigate = useNavigate();
   const handleSignUpSuccess = () => {
-    setFormType("login");
+    navigate("/login");
   };
   return (
     <div className="min-h-screen flex items-center justify-center bg-blue-light font-[Inter]">
