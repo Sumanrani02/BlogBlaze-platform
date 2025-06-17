@@ -58,7 +58,7 @@ const SignUpForm = ({ onSignUpSuccess }) => {
 
   const onSubmit = async (data) => {
     try {
-      const response = await axios.post("http://localhost:5000/api/signup", data); // Replace with your API endpoint
+      const response = await axios.post("http://localhost:5000/api/auth/register", data); // Replace with your API endpoint
       console.log("Sign Up Data:", response.data);
       toast.success("Account Created Successfully!");
       if (response) {
@@ -105,6 +105,20 @@ const SignUpForm = ({ onSignUpSuccess }) => {
             />
           </label>
         </div>
+        {/* Username Field */}
+<label className="w-full mt-4">
+  <p className="text-[0.875rem] text-offwhite mb-1 leading-[1.375rem]">
+    Username <sup className="text-red-300">*</sup>
+  </p>
+  <input
+    required
+    type="text"
+    {...register("username")}
+    placeholder="Enter username"
+    className="bg-blue-base rounded-md text-offwhite w-full p-[12px] placeholder:text-pink-light focus:outline-none focus:ring-2 focus:ring-offwhite"
+  />
+</label>
+
 
         {/* Email Address */}
         <label className="w-full mt-4">

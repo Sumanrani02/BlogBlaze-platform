@@ -48,7 +48,7 @@ const LoginForm = ({ onLoginSuccess }) => {
   const onSubmit = async (data) => {
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/login",
+        "http://localhost:5000/api/auth/login",
         data
       ); // Replace with your API endpoint
       console.log("Login Data:", response.data);

@@ -24,9 +24,9 @@ const BlazeRoutes = () => {
         <Route
           path="/write"
           element={
-            
+            <ProtectedRoute>
               <CreateBlogPost/>
-        
+        </ProtectedRoute>
           }
         />
         <Route
