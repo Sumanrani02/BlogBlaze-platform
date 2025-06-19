@@ -6,20 +6,25 @@ export const getProfile = async (req, res) => {
   res.json(user);
 };
 
-export const updateProfile = async (req, res) => {
+// controllers/userController.js
+export const updateUserProfile = async (req, res) => {
   const user = await User.findById(req.user._id);
+
+  if (!user) return res.status(404).json({ message: "User not found" });
 
   user.username = req.body.username || user.username;
   user.email = req.body.email || user.email;
 
-  if (req.body.password) {
-    const hashed = await bcrypt.hash(req.body.password, 10);
-    user.password = hashed;
-  }
+  const updatedUser = await user.save();
 
-  await user.save();
-  res.json({ message: 'Profile updated' });
+  res.json({
+    _id: updatedUser._id,
+    username: updatedUser.username,
+    email: updatedUser.email,
+    createdAt: updatedUser.createdAt
+  });
 };
+
 
 export const deleteAccount = async (req, res) => {
   await User.findByIdAndDelete(req.user._id);

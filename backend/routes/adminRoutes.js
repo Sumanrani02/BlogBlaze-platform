@@ -4,7 +4,7 @@ import { isAdmin } from '../middleware/adminMiddleware.js';
 
 import User from '../models/User.js';
 import Blog from '../models/Blog.js';
-import Comment from '../models/Comment.js';
+import Post from '../models/Comment.js';
 
 const router = express.Router();
 
@@ -27,7 +27,7 @@ router.delete('/blogs/:id', protect, isAdmin, async (req, res) => {
 });
 
 // Delete a comment
-router.delete('/comments/:id', protect, isAdmin, async (req, res) => {
+router.delete('/post/:id', protect, isAdmin, async (req, res) => {
   await Comment.findByIdAndDelete(req.params.id);
   res.json({ message: 'Comment deleted by admin' });
 });

@@ -1,39 +1,32 @@
+import mongoose from 'mongoose'; 
 import Blog from '../models/Blog.js';
+import Post from "../models/Post.js";
 import cloudinary from '../utils/cloudinary.js';
 
 // Create new blog
 export const createBlog = async (req, res) => {
   try {
-    const { title, content, category } = req.body;
-    let imageUrl = '';
+    const { title, content, category, isFeatured } = req.body;
 
-    if (req.file) {
-      const result = await cloudinary.uploader.upload_stream(
-        { resource_type: 'image' },
-        (error, result) => {
-          if (error) return res.status(500).json({ message: error.message });
-          imageUrl = result.secure_url;
-
-          saveBlog(); // Call inner function after upload
-        }
-      );
-      req.pipe(req.file.stream).pipe(result);
-    } else {
-      saveBlog();
+    if (!title || !content || !category || !req.file) {
+      return res.status(400).json({ message: "Missing required fields." });
     }
 
-    async function saveBlog() {
-      const blog = await Blog.create({
-        title,
-        content,
-        image: imageUrl,
-        category,
-        author: req.user._id,
-      });
-      res.status(201).json(blog);
-    }
+    // Upload to Cloudinary
+    const imageUrl = req.file.path;
 
+    const blog = await Blog.create({
+      title,
+      content,
+      image: imageUrl, // Save Cloudinary image URL
+      category,
+      isFeatured: isFeatured === 'true' || isFeatured === true,
+      author: req.user._id,
+    });
+
+    res.status(201).json({ message: "Blog created successfully", post: blog });
   } catch (err) {
+    console.error("Create blog error:", err);
     res.status(500).json({ message: err.message });
   }
 };
@@ -50,14 +43,35 @@ export const getAllBlogs = async (req, res) => {
   }
 };
 
+// Get blogs created by the logged-in user
+export const getUserBlogs = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const blogs = await Blog.find({ author: userId }).sort({ createdAt: -1 });
+    res.status(200).json(blogs);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to fetch user blogs' });
+  }
+};
+
 // Get single blog
 export const getBlogById = async (req, res) => {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ error: 'Invalid post ID format' });
+  }
+
   try {
-    const blog = await Blog.findById(req.params.id).populate('author', 'username');
-    if (!blog) return res.status(404).json({ message: 'Blog not found' });
-    res.json(blog);
+    const post = await Post.findById(id);
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+    res.status(200).json(post);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Error fetching blog:', err.message);
+    res.status(500).json({ error: 'Server error' });
   }
 };
 
@@ -97,5 +111,27 @@ export const deleteBlog = async (req, res) => {
     res.json({ message: 'Blog deleted' });
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+};
+
+// Get Featured Posts
+export const getFeaturedPosts = async (req, res) => {
+  try {
+    const posts = await Blog.find({ isFeatured: true }).sort({ createdAt: -1 }).limit(3);
+    res.json(posts);
+  } catch (err) {
+    console.error("Error in getFeaturedPosts:", err.stack); // ✅ log full stack
+    res.status(500).json({ message: "Failed to fetch featured posts" });
+  }
+};
+
+// Get Recent Posts
+export const getRecentPosts = async (req, res) => {
+  try {
+    const posts = await Blog.find().sort({ createdAt: -1 }).limit(6);
+    res.json(posts);
+  } catch (err) {
+    console.error("Error in getRecentPosts:", err.stack); // ✅ log full stack
+    res.status(500).json({ message: "Failed to fetch recent posts" });
   }
 };

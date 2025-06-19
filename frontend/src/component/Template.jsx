@@ -25,6 +25,9 @@ const Template = ({
   onLoginSuccess
 }) => {
   const frameImagePlaceholderUrl = frameImage;
+  const handleGoogleLogin = () => {
+  window.open("http://localhost:5000/api/auth/google", "_self");
+};
 
   return (
     <div className="flex flex-col items-center w-11/12 max-w-[1160px] py-8 mx-auto">
@@ -57,7 +60,7 @@ const Template = ({
           </div>
 
           {/* Google Sign Up Button */}
-          <button className="w-full flex justify-center items-center rounded-[8px] font-medium text-green-base border border-[#6B8E8E] px-[12px] py-[8px] gap-x-2 mt-6 bg-offwhite hover:bg-opacity-90 transition-all duration-200 shadow-sm">
+          <button onClick={handleGoogleLogin} className="w-full flex justify-center items-center rounded-[8px] font-medium text-green-base border border-[#6B8E8E] px-[12px] py-[8px] gap-x-2 mt-6 bg-offwhite hover:bg-opacity-90 transition-all duration-200 shadow-sm">
             <GoogleIcon />
             Sign Up with Google
           </button>

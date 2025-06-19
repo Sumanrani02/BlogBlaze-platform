@@ -1,18 +1,10 @@
-
 import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux"; 
 import { useNavigate } from "react-router-dom"; 
 import toast from "react-hot-toast"; 
 import { Link } from 'react-router-dom';
 import {
-  User,
-  Mail,
-  Calendar,
-  Edit,
-  Save,
-  XCircle,
-  BookOpen,
-  KeyRound 
+  Mail, Calendar, Edit, Save, XCircle, BookOpen, KeyRound 
 } from "lucide-react";
 
 import Spinner from "../component/common/Spinner";
@@ -21,7 +13,6 @@ import BlogPostCard from "../blog/BlogPostCard";
 import Footer from "../layout/Footer";
 
 const ProfilePage = () => {
-
   const { isAuthenticated, user: reduxUser, loading: authLoading, error: authError } = useSelector((state) => state.auth);
   const navigate = useNavigate();
 
@@ -32,83 +23,132 @@ const ProfilePage = () => {
 
   const [isEditing, setIsEditing] = useState(false); 
   const [editedUsername, setEditedUsername] = useState('');
-  const [editedEmail, setEditedEmail] = useState(''); 
+  const [editedEmail, setEditedEmail] = useState('');
 
-useEffect(() => {
-  // Check if authentication is loading
-  if (authLoading) {
-    setPageLoading(true);
-    return;
+  useEffect(() => {
+    if (authLoading) return setPageLoading(true);
+    if (!isAuthenticated) return navigate('/login');
+
+    const BASE_URL = "http://localhost:5000";
+
+
+    const fetchProfileData = async () => {
+      setPageLoading(true);
+      setPageError(null);
+      const token = localStorage.getItem("authToken");
+
+  if (!token) {
+    console.warn("Auth token missing. Redirecting to login...");
+    navigate ('/login')
+    return; // Don't call the API without a token
   }
 
-  // If the user is not authenticated, redirect to login
-  if (!isAuthenticated) {
-    navigate('/login');
-    return; 
-  }
+      try {
 
-  // Fetch profile data if authenticated
-  const fetchProfileData = async () => {
-    setPageLoading(true);
-    setPageError(null);
-    try {
-      const fetchedUser  = {
-        id: reduxUser ?.id || 'dummyId123',
-        username: reduxUser ?.username || 'GuestUser ',
-        email: reduxUser ?.email || 'guest@example.com',
-        memberSince: 'January 1, 2024', 
-        avatarUrl: 'https://placehold.co/150x150/blue-light/offwhite?text=BB'
-      };
-      setUserProfile(fetchedUser );
-      setEditedUsername(fetchedUser .username);
-      setEditedEmail(fetchedUser .email); 
+        const userRes = await fetch(`${BASE_URL}/api/users/profile`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
 
-      const userPosts = [
-        { id: 101, title: "My First Blog Post", excerpt: "Sharing experiences...", imageUrl: "https://placehold.co/400x250/pink-base/blue-base?text=My+Dev+Journey", category: "Development", author: fetchedUser .username, date: "May 01, 2025", tags: ["Beginner"] },
-        { id: 102, title: "Tips for Productive Remote Work", excerpt: "Strategies...", imageUrl: "https://placehold.co/400x250/blue-base/pink-base?text=Remote+Work+Tips", category: "Productivity", author: fetchedUser .username, date: "May 15, 2025", tags: ["Remote"] },
-        { id: 103, title: "Understanding CSS Flexbox vs. Grid", excerpt: "A simple guide...", imageUrl: "https://placehold.co/400x250/pink-base/blue-base?text=Flexbox+Grid", category: "Web Design", author: fetchedUser .username, date: "June 05, 2025", tags: ["CSS"] },
-      ]; 
-      setAuthoredPosts(userPosts);
-      await new Promise(resolve => setTimeout(resolve, 500)); 
+        if (!userRes.ok) {
+          const errorText = await userRes.text();
+          throw new Error(`User fetch failed: ${errorText}`);
+        }
 
-    } catch (err) {
-      console.error("Error fetching profile data:", err);
-      setPageError(err.response?.data?.message || "Failed to load profile. Please try again.");
-    } finally {
-      setPageLoading(false);
-    }
-  };
+       const fetchedUser = await userRes.json();
+       console.log("Fetched user response JSON:", fetchedUser);
 
-  // Fetch profile data only if authenticated
-  fetchProfileData();
-}, [isAuthenticated, authLoading, reduxUser , navigate]);
 
+if (!fetchedUser || !fetchedUser.createdAt) {
+  throw new Error("Invalid user data returned");
+}
+
+setUserProfile({
+  ...fetchedUser,
+  memberSince: new Date(fetchedUser.createdAt).toLocaleDateString('en-IN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  }),
+});
+
+console.log("Fetched user:", fetchedUser);
+console.log("userRes.ok:", userRes.ok);
+console.log("userRes status:", userRes.status);
+
+
+        setEditedUsername(fetchedUser.username);
+        setEditedEmail(fetchedUser.email);
+
+        const blogRes = await fetch(`${BASE_URL}/api/posts/user`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (!blogRes.ok) {
+          const blogErrorText = await blogRes.text();
+          throw new Error(`Blog fetch failed: ${blogErrorText}`);
+        }
+
+        const userPosts = await blogRes.json();
+        setAuthoredPosts(userPosts);
+      } catch (err) {
+        console.error("Error fetching profile data:", err);
+        setPageError(err.message || "Failed to load profile. Please try again.");
+      } finally {
+        setPageLoading(false);
+      }
+    };
+
+    fetchProfileData();
+  }, [isAuthenticated, authLoading, reduxUser, navigate]);
 
   const handleSaveProfile = async (e) => {
-    e.preventDefault();
-    setPageLoading(true);
-    setPageError(null); 
+  e.preventDefault();
+  setPageLoading(true);
+  setPageError(null);
 
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1000)); 
-      const updatedUser = {
-        ...userProfile,
+  try {
+    const token = localStorage.getItem("authToken"); // or reduxUser?.token
+
+    const res = await fetch(`http://localhost:5000/api/users/profile`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({
         username: editedUsername,
         email: editedEmail
-      };
+      })
+    });
 
-      setUserProfile(updatedUser); 
-      setIsEditing(false); 
-      toast.success("Profile updated successfully!"); 
-    } catch (err) {
-      console.error("Error saving profile:", err);
-      setPageError(err.response?.data?.message || 'Failed to save profile. Please try again.');
-    } finally {
-      setPageLoading(false);
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`Update failed: ${errorText}`);
     }
-  };
 
-  // Handle canceling edit mode
+    const updatedUser = await res.json();
+    setUserProfile({
+      ...updatedUser,
+      memberSince: new Date(updatedUser.createdAt).toLocaleDateString('en-IN', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      }),
+    });
+
+    setIsEditing(false);
+    toast.success("Profile updated successfully!");
+  } catch (err) {
+    console.error("Error saving profile:", err);
+    setPageError(err.message || "Failed to save profile. Please try again.");
+  } finally {
+    setPageLoading(false);
+  }
+};
+
+
   const handleCancelEdit = () => {
     setIsEditing(false);
     if (userProfile) {
@@ -118,32 +158,29 @@ useEffect(() => {
   };
 
   const handleChangePasswordClick = () => {
-    navigate('/change-password'); 
+    navigate('/change-password');
   };
 
   if (pageLoading || authLoading) {
     return (
       <>
         <Navbar />
-      <div className="min-h-screen flex flex-col justify-center items-center bg-offwhite font-inter">
-        <Spinner className="h-16 w-16 text-blue-base" />
-        <p className="mt-4 text-xl text-blue-darker">Loading profile...</p>
-      </div>
+        <div className="min-h-screen flex flex-col justify-center items-center bg-offwhite font-inter">
+          <Spinner className="h-16 w-16 text-blue-base" />
+          <p className="mt-4 text-xl text-blue-darker">Loading profile...</p>
+        </div>
       </>
     );
   }
 
-  // If there's an authentication error or page-specific error
   if (authError || pageError) {
     return (
       <>
         <Navbar />
-      <div className="min-h-screen flex flex-col justify-center items-center bg-offwhite font-inter">
-        <p className="text-red-600 text-xl font-semibold">{authError || pageError}</p>
-        <p className="text-blue-darker mt-2">
-          Please refresh the page or try again later.
-        </p>
-      </div>
+        <div className="min-h-screen flex flex-col justify-center items-center bg-offwhite font-inter">
+          <p className="text-red-600 text-xl font-semibold">{authError || pageError}</p>
+          <p className="text-blue-darker mt-2">Please refresh the page or try again later.</p>
+        </div>
       </>
     );
   }
@@ -151,13 +188,9 @@ useEffect(() => {
   return (
     <div className="min-h-screen flex flex-col bg-offwhite font-inter">
       <Navbar />
-
       <main className="flex-grow container mx-auto py-12 px-4 sm:px-6 lg:px-8 max-w-5xl">
-        <h1 className="text-5xl font-extrabold text-blue-darker mb-10 text-center leading-tight">
-          My Profile
-        </h1>
-
-        {/* Profile Information Section */}
+        <h1 className="text-5xl font-extrabold text-blue-darker mb-10 text-center leading-tight">My Profile</h1>
+  {/* Profile Information Section */}
         <section className="bg-white rounded-xl shadow-lg p-6 md:p-10 mb-10 border border-pink-base">
           <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
             {/* Avatar */}
@@ -172,7 +205,7 @@ useEffect(() => {
             {/* User Details / Edit Form */}
             <div className="flex-grow text-center md:text-left">
               {!isEditing ? (
-                // Display Mode
+      // Display Mode
                 <div className="space-y-3">
                   <h2 className="text-3xl font-bold text-blue-base">
                     {userProfile.username}

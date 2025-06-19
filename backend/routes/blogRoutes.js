@@ -2,6 +2,9 @@ import express from 'express';
 import {
   createBlog,
   getAllBlogs,
+  getFeaturedPosts,
+  getRecentPosts,
+  getUserBlogs,
   getBlogById,
   toggleLike,
   deleteBlog
@@ -12,6 +15,9 @@ import upload from '../middleware/multer.js';
 const router = express.Router();
 
 router.get('/', getAllBlogs);
+router.get("/featured", getFeaturedPosts);
+router.get("/recent", getRecentPosts);  
+router.get('/user', protect, getUserBlogs);
 router.get('/:id', getBlogById);
 
 router.post('/', protect, upload.single('image'), createBlog);

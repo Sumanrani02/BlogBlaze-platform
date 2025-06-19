@@ -1,9 +1,25 @@
 import mongoose from 'mongoose';
 
 const commentSchema = new mongoose.Schema({
-  blog: { type: mongoose.Schema.Types.ObjectId, ref: 'Blog' },
-  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  text: String
+  author: String,
+  text: String,
+  date: { type: Date, default: Date.now },
+});
+
+const postSchema = new mongoose.Schema({
+  title: String,
+  content: String,
+  image: String,
+  category: String,
+  tags: [String],
+  likes: { type: Number, default: 0 },
+  author: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User"
+  },
+  comments: [commentSchema],
 }, { timestamps: true });
 
-export default mongoose.model('Comment', commentSchema);
+const Comment = mongoose.models.Comment || mongoose.model('Comment', commentSchema);
+
+export default Comment;

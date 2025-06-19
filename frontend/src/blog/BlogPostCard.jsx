@@ -2,7 +2,9 @@ import React from "react";
 import { ArrowRight } from "lucide-react";
 
 const BlogPostCard = ({ post, isFeatured = false }) => {
-  const { id, title, excerpt, imageUrl, category, author, date } = post;
+  const { _id, title, excerpt, image, category, author, date } = post;
+  
+  console.log("Post image URL:", image);
 
   const cardClasses = isFeatured
     ? "bg-white rounded-xl shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-300 border-2 border-pink-base"
@@ -31,7 +33,7 @@ const BlogPostCard = ({ post, isFeatured = false }) => {
   return (
     <div className={`${cardClasses} font-inter`}>
       <img
-        src={imageUrl}
+        src={image}
         alt={title}
         className={imageClasses}
         onError={(e) => {
@@ -58,11 +60,11 @@ const BlogPostCard = ({ post, isFeatured = false }) => {
             isFeatured ? "text-sm" : "text-xs"
           }`}
         >
-          <span>By {author}</span>
+          <span>By {author?.username || "Unknown"}</span>
           <span>{date}</span>
         </div>
         <a
-            href={`/posts/${id}`}
+            href={`/posts/${_id}`}
           className={linkClasses}
         >
           Read More{" "}

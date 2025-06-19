@@ -20,6 +20,7 @@ const BlazeRoutes = () => {
         <Route path="/posts" element={<AllPostsPage />} />
         <Route path="/posts/:id" element={<BlogDetailPage />} />
 
+
         {/* Protected Routes */}
         <Route
           path="/create-blog"

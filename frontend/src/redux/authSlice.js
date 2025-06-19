@@ -35,7 +35,7 @@ export const loginUser = createAsyncThunk(
         "http://localhost:5000/api/auth/login", 
         userData
       );
-      localStorage.setItem('jwtToken', response.data.token);
+      localStorage.setItem('authToken', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user)); 
       return response.data.user; 
     } catch (error) {

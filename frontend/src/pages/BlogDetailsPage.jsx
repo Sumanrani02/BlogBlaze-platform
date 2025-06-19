@@ -15,18 +15,22 @@ import Navbar from "../layout/Navbar";
 import Footer from "../layout/Footer";
 import Spinner from "../component/common/Spinner";
 import axios from "axios";
+import { useParams } from "react-router-dom";
+
 
 const BlogDetailPage = () => {
+  const { id } = useParams(); 
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showCopiedMessage, setShowCopiedMessage] = useState(false);
+  
 
   useEffect(() => {
     // Fetch the blog post data from the API
     const fetchPost = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/posts/1"); // Replace with the correct endpoint
+        const response = await axios.get(`http://localhost:5000/api/posts/${id}`); // Replace with the correct endpoint
         setPost(response.data);
       } catch (err) {
         setError("Failed to load blog post. Please try again later.");
@@ -93,7 +97,7 @@ const BlogDetailPage = () => {
         <article className="bg-white rounded-xl shadow-lg p-6 md:p-10 border border-pink-base">
           {/* Post Image */}
           <img
-            src={post.imageUrl}
+            src={post.image}
             alt={post.title}
             className="w-full h-80 object-cover rounded-lg mb-8 shadow-md"
             onError={(e) => {

@@ -72,7 +72,7 @@ const HomePage = () => {
             cutting-edge ideas.
           </p>
           <a
-            href="/blog"
+            href="/posts"
             className="inline-flex items-center px-8 py-4 bg-pink-base text-blue-base text-lg font-bold rounded-full shadow-lg hover:bg-pink-light hover:text-blue-dark transition-all duration-300 transform hover:scale-105"
           >
             Start Reading <ArrowRight className="ml-2 h-5 w-5" />
@@ -88,7 +88,7 @@ const HomePage = () => {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
             {featuredPosts.map((post) => (
-              <BlogPostCard key={post.id} post={post} isFeatured={true} />
+              <BlogPostCard key={post._id} post={post} isFeatured={true} />
             ))}
           </div>
         </div>
@@ -102,7 +102,7 @@ const HomePage = () => {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {recentPosts.map((post) => (
-              <BlogPostCard key={post.id} post={post} isFeatured={false} />
+              <BlogPostCard key={post._id} post={post} isFeatured={false} />
             ))}
           </div>
         </div>
