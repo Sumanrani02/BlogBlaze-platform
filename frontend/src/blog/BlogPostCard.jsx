@@ -1,5 +1,6 @@
 import React from "react";
 import { ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const BlogPostCard = ({ post, isFeatured = false }) => {
   const { _id, title, excerpt, image, category, author, date } = post;
@@ -63,15 +64,15 @@ const BlogPostCard = ({ post, isFeatured = false }) => {
           <span>By {author?.username || "Unknown"}</span>
           <span>{date}</span>
         </div>
-        <a
-            href={`/posts/${_id}`}
+        <Link
+            to={`/posts/${_id}`}
           className={linkClasses}
         >
           Read More{" "}
           <ArrowRight
             className={`ml-1 ${isFeatured ? "h-4 w-4" : "h-3 w-3"}`}
           />
-        </a>
+        </Link>
       </div>
     </div>
   );

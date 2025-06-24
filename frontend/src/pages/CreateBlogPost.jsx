@@ -67,7 +67,7 @@ const CreateBlogPost = () => {
         {
           headers: {
             "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${localStorage.getItem("authToken")}`
+            Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
           },
         }
       );
@@ -85,7 +85,7 @@ const CreateBlogPost = () => {
 
       // Redirect to the new post's detail page after a short delay
       setTimeout(() => {
-        navigate(`/posts/${response.data.post.id}`);
+        navigate(`/posts`);
       }, 2000);
     } catch (err) {
       console.error("Error creating blog post:", err);

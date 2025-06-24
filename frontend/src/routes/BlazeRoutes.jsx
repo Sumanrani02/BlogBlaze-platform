@@ -9,6 +9,9 @@ import ProfilePage from "../pages/ProfilePage";
 import ProtectedRoute from "./ProtectedRoute";
 import NotFoundPage from "./NotFoundPage";
 import CreateBlogPost from "../pages/CreateBlogPost";
+import ForgotPassword from "../component/auth/ForgotPassword";
+import ResetPassword from "../component/auth/ResetPassword";
+import ChangePassword from "../component/auth/ChangePassword";
 const BlazeRoutes = () => {
   return (
     <>
@@ -16,10 +19,14 @@ const BlazeRoutes = () => {
         {/* Public Routes */}
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route
+          path="/resetpassword/:userId/:token"
+          element={<ResetPassword />}
+        />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/posts" element={<AllPostsPage />} />
         <Route path="/posts/:id" element={<BlogDetailPage />} />
-
 
         {/* Protected Routes */}
         <Route
@@ -35,6 +42,14 @@ const BlazeRoutes = () => {
           element={
             <ProtectedRoute>
               <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/change-password"
+          element={
+            <ProtectedRoute>
+              <ChangePassword />
             </ProtectedRoute>
           }
         />

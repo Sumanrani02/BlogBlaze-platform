@@ -18,7 +18,7 @@ const AllPostsPage = () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await axios.get("http://localhost:5000/api/posts"); // Replace with API 
+        const response = await axios.get("http://localhost:5000/api/posts"); 
         setPosts(response.data);
       } catch (err) {
         setError("Failed to load blog posts. Please try again later.");
@@ -40,19 +40,28 @@ const AllPostsPage = () => {
     let filtered = posts;
 
     if (selectedCategory !== "All") {
-      filtered = filtered.filter((post) => post.category === selectedCategory);
+      filtered = filtered.filter(
+        (post) => (post.category || "") === selectedCategory
+      );
     }
 
     if (searchQuery) {
       const lowerCaseQuery = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (post) =>
-          post.title.toLowerCase().includes(lowerCaseQuery) ||
-          post.excerpt.toLowerCase().includes(lowerCaseQuery) ||
-          post.author.toLowerCase().includes(lowerCaseQuery) ||
-          post.category.toLowerCase().includes(lowerCaseQuery) ||
-          post.tags.some((tag) => tag.toLowerCase().includes(lowerCaseQuery))
-      );
+      filtered = filtered.filter((post) => {
+        const title = (post.title || "").toLowerCase();
+        const excerpt = (post.excerpt || "").toLowerCase();
+        const category = (post.category || "").toLowerCase();
+        const tags = Array.isArray(post.tags)
+          ? post.tags.map((tag) => (tag || "").toLowerCase())
+          : [];
+
+        return (
+          title.includes(lowerCaseQuery) ||
+          excerpt.includes(lowerCaseQuery) ||
+          category.includes(lowerCaseQuery) ||
+          tags.some((tag) => tag.includes(lowerCaseQuery))
+        );
+      });
     }
     return filtered;
   }, [posts, selectedCategory, searchQuery]);
@@ -126,7 +135,7 @@ const AllPostsPage = () => {
                 <input
                   id="search-input"
                   type="text"
-                  placeholder="Search by title, author, category, or tag..."
+                  placeholder="Search by title, category, or tag..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full p-3 pl-10 rounded-md border border-pink-darker bg-offwhite text-blue-darker focus:outline-none focus:ring-2 focus:ring-blue-light shadow-sm"

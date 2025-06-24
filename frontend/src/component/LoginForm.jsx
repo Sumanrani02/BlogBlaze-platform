@@ -104,7 +104,7 @@ const LoginForm = ({ onLoginSuccess }) => {
             )}
           </span>
           <Link
-            to="#"
+            to="/forgot-password"
             className="text-base max-w-max ml-auto text-blue-lighter mt-1 hover:underline"
           >
             Forgot Password

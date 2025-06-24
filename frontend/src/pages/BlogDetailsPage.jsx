@@ -16,25 +16,34 @@ import Footer from "../layout/Footer";
 import Spinner from "../component/common/Spinner";
 import axios from "axios";
 import { useParams } from "react-router-dom";
-
+import toast from "react-hot-toast";
+import { useSelector } from "react-redux";
 
 const BlogDetailPage = () => {
-  const { id } = useParams(); 
+  const { isAuthenticated, user } = useSelector((state) => state.auth);
+  const { id } = useParams();
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showCopiedMessage, setShowCopiedMessage] = useState(false);
-  
+  const [newComment, setNewComment] = useState("");
+  const [likes, setLikes] = useState(post?.likes || 0);
+  const [liked, setLiked] = useState(false);
 
   useEffect(() => {
     // Fetch the blog post data from the API
     const fetchPost = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/api/posts/${id}`); // Replace with the correct endpoint
+        const token = localStorage.getItem("jwtToken");
+        const response = await axios.get(
+          `http://localhost:5000/api/posts/${id}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
         setPost(response.data);
       } catch (err) {
         setError("Failed to load blog post. Please try again later.");
-        console.error("Error fetching post:", err);
       } finally {
         setLoading(false);
       }
@@ -48,6 +57,55 @@ const BlogDetailPage = () => {
     navigator.clipboard.writeText(window.location.href);
     setShowCopiedMessage(true);
     setTimeout(() => setShowCopiedMessage(false), 2000);
+  };
+
+  const handleCommentSubmit = async (e) => {
+    e.preventDefault();
+    if (!isAuthenticated) {
+      toast.error("Please log in to comment.");
+      return;
+    }
+
+    if (!newComment.trim()) return;
+
+    try {
+      const token = localStorage.getItem("jwtToken");
+      const response = await axios.post(
+        `http://localhost:5000/api/posts/${id}/comments`,
+        { text: newComment },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setPost((prev) => ({
+        ...prev,
+        comments: [...prev.comments, response.data],
+      }));
+      setNewComment("");
+    } catch (err) {
+      console.error("Failed to post comment:", err);
+      toast.error("Failed to post comment. Please try again.");
+    }
+  };
+
+  const handleLike = async () => {
+    if (!isAuthenticated) {
+      toast.error("Please log in to like the post.");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("jwtToken");
+      await axios.post(
+        `http://localhost:5000/api/posts/${id}/like`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setLiked((prevLiked) => !prevLiked);
+      setLikes((prevLikes) => (liked ? prevLikes - 1 : prevLikes + 1));
+    } catch (err) {
+      console.error("Failed to toggle like:", err);
+    }
   };
 
   if (loading) {
@@ -127,12 +185,19 @@ const BlogDetailPage = () => {
                   {post.category}
                 </span>
               </div>
-              <div className="flex items-center">
-                <Heart
-                  className="h-4 w-4 mr-1 text-pink-darker"
-                  fill="currentColor"
-                />
-                <span>{post.likes} Likes</span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleLike}
+                  className={`p-2 rounded-full cursor-pointer ${
+                    liked ? "text-pink-darker" : "text-gray-400"
+                  } hover:text-pink-base`}
+                >
+                  <Heart
+                    className="h-5 w-5"
+                    fill={liked ? "currentColor" : "none"}
+                  />
+                </button>
+                <span className="text-blue-darker">{likes} Likes</span>
               </div>
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
@@ -233,30 +298,15 @@ const BlogDetailPage = () => {
               <h4 className="text-xl font-bold text-blue-base mb-4">
                 Leave a Comment
               </h4>
-              <form className="space-y-4">
-                <div>
-                  <label htmlFor="comment-name" className="sr-only">
-                    Your Name
-                  </label>
-                  <input
-                    type="text"
-                    id="comment-name"
-                    placeholder="Your Name (Optional)"
-                    className="w-full p-3 rounded-md border border-pink-darker bg-offwhite text-blue-darker focus:outline-none focus:ring-2 focus:ring-blue-light"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="comment-text" className="sr-only">
-                    Your Comment
-                  </label>
-                  <textarea
-                    id="comment-text"
-                    rows="5"
-                    placeholder="Write your comment here..."
-                    required
-                    className="w-full p-3 rounded-md border border-pink-darker bg-offwhite text-blue-darker focus:outline-none focus:ring-2 focus:ring-blue-light resize-y"
-                  ></textarea>
-                </div>
+              <form className="space-y-4" onSubmit={handleCommentSubmit}>
+                <textarea
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  rows="5"
+                  placeholder="Write your comment here..."
+                  required
+                  className="w-full p-3 rounded-md border border-pink-darker bg-offwhite text-blue-darker focus:outline-none focus:ring-2 focus:ring-blue-light resize-y"
+                ></textarea>
                 <button
                   type="submit"
                   className="px-6 py-3 bg-blue-base text-pink-base font-bold rounded-full shadow-md hover:bg-blue-dark transition-colors duration-300 transform hover:scale-105"
