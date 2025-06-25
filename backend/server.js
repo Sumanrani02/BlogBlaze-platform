@@ -9,7 +9,6 @@ import './config/passport.js';
 import authRoutes from './routes/authRoutes.js';
 import blogRoutes from './routes/blogRoutes.js';
 import userRoutes from './routes/userRoutes.js';
-import commentRoutes from './routes/commentRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 
 dotenv.config();
@@ -24,7 +23,6 @@ app.use(passport.session());
 app.use('/api/auth', authRoutes);
 app.use('/api/posts', blogRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/comments', commentRoutes);
 app.use('/api/admin', adminRoutes);
 
 const PORT = process.env.PORT || 5000;

@@ -59,8 +59,16 @@ const SignUpForm = ({ onSignUpSuccess }) => {
   };
 
   const onSubmit = async (data) => {
-    const { confirmPassword, ...registerData } = data;
+      const { firstName, lastName, confirmPassword, ...rest } = data;
+  
+  // Use username from form or construct from first/last name
+  const registerData = {
+    username: `${firstName} ${lastName}`,  // or `${firstName} ${lastName}`
+    email: rest.email,
+    password: rest.password,
+  };
     const resultAction = await dispatch(registerUser(registerData));
+    console.log("🔍 Registering with:", registerData);
 
     if (registerUser.fulfilled.match(resultAction)) {
       toast.success(resultAction.payload || "Account Created Successfully!");

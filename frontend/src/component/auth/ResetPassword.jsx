@@ -52,6 +52,7 @@ const ResetPassword = () => {
     }
 
     try {
+      const token = localStorage.getItem("authToken");
       const response = await axios.post(
         "http://localhost:5000/api/auth/reset-password",
         {

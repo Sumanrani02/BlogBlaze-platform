@@ -52,13 +52,13 @@ const ProfilePage = () => {
       try {
         const [userRes, blogRes, commentsRes] = await Promise.all([
           fetch(`${BASE_URL}/api/users/profile`, {
-            headers: { Authorization: `Bearer ${token}` },
+            headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` },
           }),
           fetch(`${BASE_URL}/api/posts/user`, {
-            headers: { Authorization: `Bearer ${token}` },
+            headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` },
           }),
-          fetch(`${BASE_URL}/api/comments/user`, {
-            headers: { Authorization: `Bearer ${token}` },
+          fetch(`${BASE_URL}/api/posts/user/comments`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` },
           }),
         ]);
 
@@ -100,15 +100,14 @@ const ProfilePage = () => {
 
   const handleDeletePost = async (postId) => {
     try {
-      const token = localStorage.getItem("authToken");
       const res = await fetch(`${BASE_URL}/api/posts/${postId}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` },
       });
 
       if (!res.ok) throw new Error("Failed to delete the post.");
 
-      setAuthoredPosts((prev) => prev.filter((post) => post.id !== postId));
+      setAuthoredPosts((prev) => prev.filter((post) => post._id !== postId));
       toast.success("Blog post deleted successfully.");
     } catch (err) {
       console.error(err);
@@ -118,16 +117,15 @@ const ProfilePage = () => {
 
   const handleDeleteComment = async (commentId) => {
     try {
-      const token = localStorage.getItem("authToken");
-      const res = await fetch(`${BASE_URL}/api/comments/${commentId}`, {
+      const res = await fetch(`${BASE_URL}/api/posts/comments/${commentId}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` },
       });
 
       if (!res.ok) throw new Error("Failed to delete the comment.");
 
       setUserComments((prev) =>
-        prev.filter((comment) => comment.id !== commentId)
+        prev.filter((comment) => comment._id !== commentId)
       );
       toast.success("Comment deleted successfully.");
     } catch (err) {
@@ -144,7 +142,7 @@ const ProfilePage = () => {
     try {
       const token = localStorage.getItem("authToken");
 
-      const res = await fetch(`${BASE_URL}api/users/profile`, {
+      const res = await fetch(`${BASE_URL}/api/users/profile`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -356,7 +354,7 @@ const ProfilePage = () => {
                 <div key={post.id} className="relative">
                   <BlogPostCard post={post} />
                   <button
-                    onClick={() => handleDeletePost(post.id)}
+                    onClick={() => handleDeletePost(post._id)}
                     className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-md"
                   >
                     <Trash className="h-5 w-5" />
@@ -393,7 +391,7 @@ const ProfilePage = () => {
             <ul className="space-y-4">
               {userComments.map((comment) => (
                 <li
-                  key={comment.id}
+                  key={comment._id}
                   className="p-4 bg-pink-light rounded-lg shadow-sm"
                 >
                   <p className="text-blue-darker text-lg mb-2">
@@ -402,7 +400,7 @@ const ProfilePage = () => {
                   <div className="flex justify-between text-sm text-gray-500">
                     <span>On: {comment.postTitle || "Unknown Post"}</span>
                     <button
-                      onClick={() => handleDeleteComment(comment.id)}
+                      onClick={() => handleDeleteComment(comment._id)}
                       className="text-red-500 hover:underline"
                     >
                       Delete

@@ -108,11 +108,13 @@ export const deleteBlog = async (req, res) => {
     }
 
     await blog.deleteOne();
-    res.json({ message: 'Blog deleted' });
+    res.json({ message: 'Blog deleted', deletedId: blog._id });
   } catch (err) {
+    console.error("Delete blog error:", err);
     res.status(500).json({ message: err.message });
   }
 };
+
 
 // Get Featured Posts
 export const getFeaturedPosts = async (req, res) => {
@@ -135,3 +137,4 @@ export const getRecentPosts = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch recent posts" });
   }
 };
+

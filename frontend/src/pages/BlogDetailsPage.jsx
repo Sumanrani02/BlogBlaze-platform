@@ -34,7 +34,7 @@ const BlogDetailPage = () => {
     // Fetch the blog post data from the API
     const fetchPost = async () => {
       try {
-        const token = localStorage.getItem("jwtToken");
+        const token = localStorage.getItem("authToken");
         const response = await axios.get(
           `http://localhost:5000/api/posts/${id}`,
           {
@@ -69,16 +69,17 @@ const BlogDetailPage = () => {
     if (!newComment.trim()) return;
 
     try {
-      const token = localStorage.getItem("jwtToken");
+      console.log("Token being sent:", localStorage.getItem("authToken"));
+
       const response = await axios.post(
         `http://localhost:5000/api/posts/${id}/comments`,
-        { text: newComment },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { comment: newComment },
+        { headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` } }
       );
 
       setPost((prev) => ({
         ...prev,
-        comments: [...prev.comments, response.data],
+        comments: [...prev.comments, response.data.comment],
       }));
       setNewComment("");
     } catch (err) {
@@ -94,11 +95,10 @@ const BlogDetailPage = () => {
     }
 
     try {
-      const token = localStorage.getItem("jwtToken");
       await axios.post(
         `http://localhost:5000/api/posts/${id}/like`,
         {},
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` } }
       );
 
       setLiked((prevLiked) => !prevLiked);
@@ -280,7 +280,7 @@ const BlogDetailPage = () => {
                     className="bg-pink-light p-5 rounded-lg shadow-sm border border-pink-base"
                   >
                     <p className="font-semibold text-blue-base mb-1">
-                      {comment.author}
+                      {comment.author.username || "Unknown User"}
                     </p>
                     <p className="text-blue-darker text-sm">{comment.text}</p>
                     <p className="text-xs text-gray-500 mt-2">{comment.date}</p>

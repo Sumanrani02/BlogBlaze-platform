@@ -4,7 +4,6 @@ import { isAdmin } from '../middleware/adminMiddleware.js';
 
 import User from '../models/User.js';
 import Blog from '../models/Blog.js';
-import Post from '../models/Comment.js';
 
 const router = express.Router();
 

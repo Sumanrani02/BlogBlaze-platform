@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import { useSelector } from "react-redux";
 import { useNavigate, Link } from "react-router-dom";
 import { Lock, CheckCircle, ArrowLeft, Eye, EyeOff } from "lucide-react";
@@ -63,12 +64,11 @@ const ChangePassword = () => {
   }
 
   try {
-    const token = localStorage.getItem("jwtToken"); 
-    const response = await axios.post(
-      "http://localhost:5000/api/auth/change-password",
+    const response = await axios.put(
+      "http://localhost:5000/api/users/change-password",
       { currentPassword, newPassword },
       {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` },
       }
     );
 

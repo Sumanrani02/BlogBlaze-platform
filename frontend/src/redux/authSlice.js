@@ -3,7 +3,7 @@ import axios from "axios";
 
 const getInitialAuthState = () => {
   try {
-    const token = localStorage.getItem('jwtToken');
+    const token = localStorage.getItem('authToken');
     const user = localStorage.getItem('user'); 
     if (token && user) {
       return {
@@ -15,7 +15,7 @@ const getInitialAuthState = () => {
     }
   } catch (e) {
     console.error("Failed to load auth state from localStorage:", e);
-    localStorage.removeItem('jwtToken');
+    localStorage.removeItem('authToken');
     localStorage.removeItem('user');
   }
   return {
@@ -70,7 +70,7 @@ const authSlice = createSlice({
       state.isAuthenticated = false;
       state.loading = false; 
       state.error = null;
-      localStorage.removeItem('jwtToken');
+      localStorage.removeItem('authToken');
       localStorage.removeItem('user'); 
     },
     setError: (state, action) => {

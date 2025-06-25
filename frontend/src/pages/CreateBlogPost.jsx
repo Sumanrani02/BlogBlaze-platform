@@ -61,13 +61,16 @@ const CreateBlogPost = () => {
       formData.append("content", content);
       formData.append("featuredImage", featuredImage);
 
+      console.log("Token sent:", localStorage.getItem("authToken"));
+
+
       const response = await axios.post(
         "http://localhost:5000/api/posts",
         formData,
         {
           headers: {
             "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
+            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
           },
         }
       );
