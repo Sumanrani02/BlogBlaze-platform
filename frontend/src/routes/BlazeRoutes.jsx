@@ -21,7 +21,7 @@ const BlazeRoutes = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route
-          path="/resetpassword/:userId/:token"
+          path="/reset-password/:token"
           element={<ResetPassword />}
         />
         <Route path="/signup" element={<SignUp />} />

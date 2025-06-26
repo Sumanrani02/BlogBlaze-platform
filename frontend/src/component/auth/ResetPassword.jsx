@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
 import { Lock, CheckCircle, Eye, EyeOff } from "lucide-react";
 import toast from "react-hot-toast";
 import Spinner from "../common/Spinner";
 
 const ResetPassword = () => {
-  const { userId, token } = useParams();
+  const {  token } = useParams();
   const navigate = useNavigate();
 
   const [newPassword, setNewPassword] = useState("");
@@ -17,12 +18,12 @@ const ResetPassword = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
-    if (!userId || !token) {
+    if ( !token) {
       setError(
         "Invalid or missing password reset link. Please try requesting a new one."
       );
     }
-  }, [userId, token]);
+  }, [ token ]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -30,7 +31,7 @@ const ResetPassword = () => {
     setError(null);
     setSuccessMessage(null);
 
-    if (!userId || !token) {
+    if ( !token) {
       setError("Invalid reset link. Please request a new one.");
       setLoading(false);
       return;
@@ -52,13 +53,10 @@ const ResetPassword = () => {
     }
 
     try {
-      const token = localStorage.getItem("authToken");
       const response = await axios.post(
-        "http://localhost:5000/api/auth/reset-password",
+        `http://localhost:5000/api/auth/reset-password/${token}`,
         {
-          userId,
-          token,
-          newPassword,
+         password: newPassword
         }
       );
 
@@ -189,7 +187,7 @@ const ResetPassword = () => {
           <button
             type="submit"
             className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-lg font-medium rounded-md text-blue-base bg-pink-base hover:bg-pink-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-dark transition-all duration-300 transform hover:scale-100 disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={loading || !userId || !token} //
+            disabled={loading || !token} //
           >
             {loading ? (
               <Spinner className="h-6 w-6 text-blue-base" />
