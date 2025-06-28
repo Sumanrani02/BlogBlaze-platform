@@ -12,6 +12,7 @@ import CreateBlogPost from "../pages/CreateBlogPost";
 import ForgotPassword from "../component/auth/ForgotPassword";
 import ResetPassword from "../component/auth/ResetPassword";
 import ChangePassword from "../component/auth/ChangePassword";
+import AdminDashboard from "../admin/AdminDashboard";
 const BlazeRoutes = () => {
   return (
     <>
@@ -20,15 +21,20 @@ const BlazeRoutes = () => {
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route
-          path="/reset-password/:token"
-          element={<ResetPassword />}
-        />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/posts" element={<AllPostsPage />} />
         <Route path="/posts/:id" element={<BlogDetailPage />} />
 
         {/* Protected Routes */}
+        <Route
+          path="/admin-dashboard"
+          element={
+            <ProtectedRoute>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/create-blog"
           element={

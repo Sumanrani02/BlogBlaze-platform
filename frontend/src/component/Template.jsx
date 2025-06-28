@@ -1,7 +1,7 @@
 import React from "react";
 import LoginForm from "./LoginForm";
 import frameImage from "../assets/frame.png";
-import SignUpFrom from "./SignUpFrom";
+import SignUpForm from "./SignUpForm";
 
 // --- Inline SVG for Google Icon (replaces FcGoogle) ---
 const GoogleIcon = ({ className = "h-5 w-5" }) => (
@@ -18,7 +18,6 @@ const GoogleIcon = ({ className = "h-5 w-5" }) => (
 const Template = ({
   title,
   description1,
-  description2,
   imagePlaceholderUrl,
   formType,
   onSignUpSuccess,
@@ -47,7 +46,7 @@ const Template = ({
         <div className="w-11/12 max-w-[450px]">
           {/* Conditionally render SignUpForm or LoginForm, passing success callbacks */}
           {formType === "signup" ? (
-            <SignUpFrom onSignUpSuccess={onSignUpSuccess} />
+            <SignUpForm onSignUpSuccess={onSignUpSuccess} />
           ) : (
             <LoginForm onLoginSuccess={onLoginSuccess} />
           )}

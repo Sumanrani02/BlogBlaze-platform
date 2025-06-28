@@ -47,12 +47,12 @@ const LoginForm = ({ onLoginSuccess }) => {
     setShowPassword((prev) => !prev);
   };
 
-  const onSubmit = async (data) => {
+   const onSubmit = async (data) => {
     const resultAction = await dispatch(loginUser(data));
 
     if (loginUser.fulfilled.match(resultAction)) {
       toast.success("Logged In Successfully!");
-      onLoginSuccess();
+      onLoginSuccess(resultAction.payload); 
     } else {
       toast.error(resultAction.payload || "Login failed");
     }

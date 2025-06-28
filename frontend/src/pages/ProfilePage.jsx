@@ -19,6 +19,7 @@ import Spinner from "../component/common/Spinner";
 import Navbar from "../layout/Navbar";
 import BlogPostCard from "../blog/BlogPostCard";
 import Footer from "../layout/Footer";
+import ConfirmationModal from "../component/common/ConfirmationModal";
 
 const ProfilePage = () => {
   const {
@@ -37,6 +38,8 @@ const ProfilePage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedUsername, setEditedUsername] = useState("");
   const [editedEmail, setEditedEmail] = useState("");
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const BASE_URL = "http://localhost:5000";
 
@@ -52,13 +55,19 @@ const ProfilePage = () => {
       try {
         const [userRes, blogRes, commentsRes] = await Promise.all([
           fetch(`${BASE_URL}/api/users/profile`, {
-            headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` },
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+            },
           }),
           fetch(`${BASE_URL}/api/posts/user`, {
-            headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` },
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+            },
           }),
           fetch(`${BASE_URL}/api/posts/user/comments`, {
-            headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` },
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+            },
           }),
         ]);
 
@@ -102,7 +111,9 @@ const ProfilePage = () => {
     try {
       const res = await fetch(`${BASE_URL}/api/posts/${postId}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` },
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+        },
       });
 
       if (!res.ok) throw new Error("Failed to delete the post.");
@@ -119,7 +130,9 @@ const ProfilePage = () => {
     try {
       const res = await fetch(`${BASE_URL}/api/posts/comments/${commentId}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` },
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+        },
       });
 
       if (!res.ok) throw new Error("Failed to delete the comment.");
@@ -194,6 +207,35 @@ const ProfilePage = () => {
     navigate("/change-password");
   };
 
+  const handleCloseDeleteModal = () => {
+    setIsDeleteModalOpen(false);
+    setIsDeleting(false);
+  };
+  const confirmDeleteUser = async () => {
+  if (!userProfile?._id) return; 
+  setIsDeleting(true); 
+  try {
+    const res = await fetch(`${BASE_URL}/api/users/${userProfile._id}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+      },
+    });
+
+    if (!res.ok) throw new Error("Failed to delete the user.");
+
+    toast.success("Your account has been successfully deleted.");
+    setIsDeleteModalOpen(false);
+    setIsDeleting(false);
+    navigate("/"); 
+  } catch (err) {
+    console.error("Error during user deletion:", err);
+    toast.error("Failed to delete your account. Please try again.");
+    setIsDeleting(false); 
+  }
+};
+
+
   if (pageLoading || authLoading) {
     return (
       <>
@@ -260,18 +302,27 @@ const ProfilePage = () => {
                     <Calendar className="h-4 w-4 mr-2 text-blue-light" /> Member
                     since: {userProfile.memberSince || "N/A"}
                   </p>
-                  <button
-                    onClick={() => setIsEditing(true)}
-                    className="mt-4 inline-flex items-center px-6 py-2 bg-pink-base text-blue-base font-semibold rounded-full shadow-md hover:bg-pink-dark transition-colors duration-300 transform hover:scale-105"
-                  >
-                    <Edit className="h-4 w-4 mr-2" /> Edit Profile
-                  </button>
-                  <button
-                    onClick={handleChangePasswordClick}
-                    className="mt-4 ml-3 inline-flex items-center px-6 py-2 bg-blue-light text-offwhite font-semibold rounded-full shadow-md hover:bg-blue-base transition-colors duration-300 transform hover:scale-105"
-                  >
-                    <KeyRound className="h-4 w-4 mr-2" /> Change Password
-                  </button>
+                  <div className="flex flex-wrap gap-3 mt-4 justify-center md:justify-start">
+                    <button
+                      onClick={() => setIsEditing(true)}
+                      className="mt-4 inline-flex items-center px-6 py-2 bg-pink-base text-blue-base font-semibold rounded-full shadow-md hover:bg-pink-dark transition-colors duration-300 transform hover:scale-105"
+                    >
+                      <Edit className="h-4 w-4 mr-2" /> Edit Profile
+                    </button>
+                    <button
+                      onClick={handleChangePasswordClick}
+                      className="mt-4 ml-3 inline-flex items-center px-6 py-2 bg-blue-light text-offwhite font-semibold rounded-full shadow-md hover:bg-blue-base transition-colors duration-300 transform hover:scale-105"
+                    >
+                      <KeyRound className="h-4 w-4 mr-2" /> Change Password
+                    </button>
+                    {/* New: Delete Profile Button */}
+                    <button
+                      onClick={() => setIsDeleteModalOpen(true)}
+                      className="mt-4 ml-3 inline-flex items-center px-6 py-2 bg-red-500 text-white font-semibold rounded-full shadow-md hover:bg-red-600 transition-colors duration-300 transform hover:scale-105"
+                    >
+                      <Trash className="h-4 w-4 mr-2" /> Delete Profile
+                    </button>
+                  </div>
                 </div>
               ) : (
                 // Edit Mode
@@ -418,6 +469,16 @@ const ProfilePage = () => {
       </main>
 
       <Footer />
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={handleCloseDeleteModal}
+        onConfirm={confirmDeleteUser}
+        title="Confirm Account Deletion"
+        message="Are you absolutely sure you want to delete your account? This action is irreversible and all your data, including blogs and comments, will be permanently removed."
+        confirmText="Yes, Delete My Account"
+        cancelText="No, Keep My Account"
+        isLoading={isDeleting}
+      />
     </div>
   );
 };
