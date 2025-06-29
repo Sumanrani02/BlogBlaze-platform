@@ -98,7 +98,7 @@ const authSlice = createSlice({
         state.user = null;
         state.isAuthenticated = false;
         state.error = action.payload; 
-        localStorage.removeItem('jwtToken'); 
+        localStorage.removeItem('authToken'); 
         localStorage.removeItem('user'); 
       })
       // Handle registerUser async thunk lifecycle

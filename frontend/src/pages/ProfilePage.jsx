@@ -215,7 +215,7 @@ const ProfilePage = () => {
   if (!userProfile?._id) return; 
   setIsDeleting(true); 
   try {
-    const res = await fetch(`${BASE_URL}/api/users/${userProfile._id}`, {
+    const res = await fetch(`${BASE_URL}/api/users/me`, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${localStorage.getItem("authToken")}`,
@@ -227,7 +227,8 @@ const ProfilePage = () => {
     toast.success("Your account has been successfully deleted.");
     setIsDeleteModalOpen(false);
     setIsDeleting(false);
-    navigate("/"); 
+    localStorage.removeItem("authToken");
+    navigate("/login");
   } catch (err) {
     console.error("Error during user deletion:", err);
     toast.error("Failed to delete your account. Please try again.");

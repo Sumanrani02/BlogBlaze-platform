@@ -280,7 +280,7 @@ const BlogDetailPage = () => {
                     className="bg-pink-light p-5 rounded-lg shadow-sm border border-pink-base"
                   >
                     <p className="font-semibold text-blue-base mb-1">
-                      {comment.author.username || "Unknown User"}
+                      {comment.user?.username || "Unknown User"}
                     </p>
                     <p className="text-blue-darker text-sm">{comment.text}</p>
                     <p className="text-xs text-gray-500 mt-2">{comment.date}</p>

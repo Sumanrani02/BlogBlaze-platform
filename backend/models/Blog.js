@@ -26,8 +26,10 @@ const blogSchema = new mongoose.Schema({
   author: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
+    required: true
   },
-  comments: [commentSchema],
-}, { timestamps: true });
+  comments: { type: [commentSchema], default: [] },
+}, { timestamps: true }
+);
 
 export default mongoose.model('Blog', blogSchema);

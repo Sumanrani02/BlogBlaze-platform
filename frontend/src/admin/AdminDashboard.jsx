@@ -59,14 +59,20 @@ const AdminDashboard = () => {
     setError(null);
 
     try {
+       // or use redux if stored there
+    const config = {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+      },
+    };
       if (tab === "users") {
-        const response = await axios.get(`${API_BASE_URL}/users`);
+        const response = await axios.get(`${API_BASE_URL}/admin/users` , config);
         setUsers(response.data);
       } else if (tab === "blogs") {
-        const response = await axios.get(`${API_BASE_URL}/blogs`);
+        const response = await axios.get(`${API_BASE_URL}/admin/blogs` , config);
         setBlogs(response.data);
       } else if (tab === "comments") {
-        const response = await axios.get(`${API_BASE_URL}/comments`);
+        const response = await axios.get(`${API_BASE_URL}/admin/comments`, config);
         setComments(response.data);
       }
     } catch (err) {
@@ -87,12 +93,19 @@ const AdminDashboard = () => {
       message = "Are you sure you want to delete this user?";
       confirmAction = async () => {
         try {
-          await axios.delete(`${API_BASE_URL}/users/${itemId}`);
+       const config = {
+        headers: {
+        Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+      },
+    };
+
+          await axios.delete(`${API_BASE_URL}/admin/users/${itemId}` , config);
           setUsers((prevUsers) =>
-            prevUsers.filter((user) => user.id !== itemId)
+            prevUsers.filter((user) => user._id !== itemId)
           );
           toast.success("User deleted successfully.");
         } catch (err) {
+          console.error("Delete user error:", err);
           toast.error(err.response?.data?.message || "Failed to delete user.");
         } finally {
           setIsModalOpen(false);
@@ -103,12 +116,18 @@ const AdminDashboard = () => {
       message = "Are you sure you want to delete this blog?";
       confirmAction = async () => {
         try {
-          await axios.delete(`${API_BASE_URL}/blogs/${itemId}`);
+           const config = {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+      },
+    };
+          await axios.delete(`${API_BASE_URL}/admin/blogs/${itemId}` , config);
           setBlogs((prevBlogs) =>
             prevBlogs.filter((blog) => blog.id !== itemId)
           );
           toast.success("Blog deleted successfully.");
         } catch (err) {
+          console.error("Delete blog error:", err);
           toast.error(err.response?.data?.message || "Failed to delete blog.");
         } finally {
           setIsModalOpen(false);
@@ -118,13 +137,19 @@ const AdminDashboard = () => {
       title = "Delete Comment";
       message = "Are you sure you want to delete this comment?";
       confirmAction = async () => {
+         const config = {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+      },
+    };
         try {
-          await axios.delete(`${API_BASE_URL}/comments/${itemId}`);
+          await axios.delete(`${API_BASE_URL}/admin/comments/${itemId}` , config);
           setComments((prevComments) =>
             prevComments.filter((comment) => comment.id !== itemId)
           );
           toast.success("Comment deleted successfully.");
         } catch (err) {
+          console.error("Delete comment error:", err); 
           toast.error(
             err.response?.data?.message || "Failed to delete comment."
           );
@@ -237,9 +262,9 @@ const AdminDashboard = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {users.map((user) => (
+          {users.map((user) => (
                             <tr
-                              key={user.id}
+                              key={user._id}
                               className="border-b border-gray-200 last:border-b-0"
                             >
                               <td className="py-3 px-4 text-blue-darker">
@@ -253,7 +278,7 @@ const AdminDashboard = () => {
                               </td>
                               <td className="py-3 px-4 text-center">
                                 <button
-                                  onClick={() => handleDelete("user", user.id)}
+                                  onClick={() => handleDelete("user", user._id)}
                                   className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors duration-200"
                                 >
                                   <Trash2 className="h-5 w-5" />
@@ -261,6 +286,8 @@ const AdminDashboard = () => {
                               </td>
                             </tr>
                           ))}
+       
+
                         </tbody>
                       </table>
                     </div>
