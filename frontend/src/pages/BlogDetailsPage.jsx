@@ -29,6 +29,7 @@ const BlogDetailPage = () => {
   const [newComment, setNewComment] = useState("");
   const [likes, setLikes] = useState(post?.likes || 0);
   const [liked, setLiked] = useState(false);
+  
 
   useEffect(() => {
     // Fetch the blog post data from the API
@@ -42,6 +43,7 @@ const BlogDetailPage = () => {
           }
         );
         setPost(response.data);
+        setLikes(response.data.likes);
       } catch (err) {
         setError("Failed to load blog post. Please try again later.");
       } finally {
@@ -74,7 +76,11 @@ const BlogDetailPage = () => {
       const response = await axios.post(
         `http://localhost:5000/api/posts/${id}/comments`,
         { comment: newComment },
-        { headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` } }
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+          },
+        }
       );
 
       setPost((prev) => ({
@@ -98,7 +104,11 @@ const BlogDetailPage = () => {
       await axios.post(
         `http://localhost:5000/api/posts/${id}/like`,
         {},
-        { headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` } }
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+          },
+        }
       );
 
       setLiked((prevLiked) => !prevLiked);
@@ -148,10 +158,10 @@ const BlogDetailPage = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-offwhite font-inter">
+    <div className="min-h-screen flex flex-col bg-offwhite font-inter overflow-x-hidden">
       <Navbar />
 
-      <main className="flex-grow container mx-auto py-12 px-4 sm:px-6 lg:px-8 max-w-4xl">
+      <main className="flex-grow container mx-auto py-12 px-4 sm:px-6 lg:px-8 max-w-4xl overflow-x-hidden">
         <article className="bg-white rounded-xl shadow-lg p-6 md:p-10 border border-pink-base">
           {/* Post Image */}
           <img
@@ -214,7 +224,7 @@ const BlogDetailPage = () => {
 
           {/* Post Content - Using dangerouslySetInnerHTML for rich text */}
           <div
-            className="prose prose-lg max-w-none text-blue-dark leading-relaxed"
+            className="prose prose-lg max-w-none text-blue-dark leading-relaxed overflow-x-hidden"
             dangerouslySetInnerHTML={{ __html: post.content }}
           />
 

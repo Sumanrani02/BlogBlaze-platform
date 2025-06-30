@@ -211,31 +211,31 @@ const ProfilePage = () => {
     setIsDeleteModalOpen(false);
     setIsDeleting(false);
   };
+
   const confirmDeleteUser = async () => {
-  if (!userProfile?._id) return; 
-  setIsDeleting(true); 
-  try {
-    const res = await fetch(`${BASE_URL}/api/users/me`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-      },
-    });
+    if (!userProfile?._id) return;
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`${BASE_URL}/api/users/me`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+        },
+      });
 
-    if (!res.ok) throw new Error("Failed to delete the user.");
+      if (!res.ok) throw new Error("Failed to delete the user.");
 
-    toast.success("Your account has been successfully deleted.");
-    setIsDeleteModalOpen(false);
-    setIsDeleting(false);
-    localStorage.removeItem("authToken");
-    navigate("/login");
-  } catch (err) {
-    console.error("Error during user deletion:", err);
-    toast.error("Failed to delete your account. Please try again.");
-    setIsDeleting(false); 
-  }
-};
-
+      toast.success("Your account has been successfully deleted.");
+      setIsDeleteModalOpen(false);
+      setIsDeleting(false);
+      localStorage.removeItem("authToken");
+      navigate("/login");
+    } catch (err) {
+      console.error("Error during user deletion:", err);
+      toast.error("Failed to delete your account. Please try again.");
+      setIsDeleting(false);
+    }
+  };
 
   if (pageLoading || authLoading) {
     return (
@@ -279,8 +279,7 @@ const ProfilePage = () => {
             <div className="flex-shrink-0">
               <img
                 src={
-                  userProfile.avatarUrl ||
-                  "https://placehold.co/150x150/blue-dark/pink-light?text=User"
+                  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSSyGhUIYBA8rPXY2lczYsz-bcc1yf5D5vRww&s"
                 } // Fallback for avatar
                 alt={`${userProfile.username}'s avatar`}
                 className="w-32 h-32 rounded-full object-cover border-4 border-blue-base shadow-md"

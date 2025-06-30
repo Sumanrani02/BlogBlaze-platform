@@ -10,9 +10,11 @@ import Navbar from "../../layout/Navbar";
 import Footer from "../../layout/Footer";
 
 const ChangePassword = () => {
-  const { isAuthenticated, loading: authLoading } = useSelector(
-    (state) => state.auth
-  );
+  const {
+    isAuthenticated,
+    user: reduxUser,
+    loading: authLoading,
+  } = useSelector((state) => state.auth);
   const navigate = useNavigate();
 
   const [currentPassword, setCurrentPassword] = useState("");
@@ -37,61 +39,67 @@ const ChangePassword = () => {
   }, [isAuthenticated, authLoading, navigate]);
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  setLoading(true);
-  setError(null);
-  setSuccessMessage(null);
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    setSuccessMessage(null);
 
-  if (!currentPassword || !newPassword || !confirmNewPassword) {
-    setError("All fields are required.");
-    setLoading(false);
-    return;
-  }
-  if (newPassword.length < 6) {
-    setError("New password must be at least 6 characters long.");
-    setLoading(false);
-    return;
-  }
-  if (newPassword !== confirmNewPassword) {
-    setError("New passwords do not match!");
-    setLoading(false);
-    return;
-  }
-  if (currentPassword === newPassword) {
-    setError("New password cannot be the same as the current password.");
-    setLoading(false);
-    return;
-  }
+    if (!currentPassword || !newPassword || !confirmNewPassword) {
+      setError("All fields are required.");
+      setLoading(false);
+      return;
+    }
+    if (newPassword.length < 6) {
+      setError("New password must be at least 6 characters long.");
+      setLoading(false);
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      setError("New passwords do not match!");
+      setLoading(false);
+      return;
+    }
+    if (currentPassword === newPassword) {
+      setError("New password cannot be the same as the current password.");
+      setLoading(false);
+      return;
+    }
 
-  try {
-    const response = await axios.put(
-      "http://localhost:5000/api/users/change-password",
-      { currentPassword, newPassword },
-      {
-        headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` },
-      }
-    );
+    try {
+      const response = await axios.put(
+        "http://localhost:5000/api/users/change-password",
+        { currentPassword, newPassword },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+          },
+        }
+      );
 
-    setSuccessMessage(response.data.message);
-    toast.success(response.data.message);
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmNewPassword("");
+      setSuccessMessage(response.data.message);
+      toast.success(response.data.message);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmNewPassword("");
 
-    setTimeout(() => {
-      navigate("/profile-page");
-    }, 3000);
-  } catch (err) {
-    console.error("Change password error:", err);
-    setError(
-      err.response?.data?.message || "Failed to change password. Please try again."
-    );
-    toast.error(err.response?.data?.message || "Failed to change password.");
-  } finally {
-    setLoading(false);
-  }
-};
-
+      setTimeout(() => {
+        if (reduxUser?.role === "admin") {
+          navigate("/admin-dashboard");
+        } else {
+          navigate("/profile-page");
+        }
+      }, 3000);
+    } catch (err) {
+      console.error("Change password error:", err);
+      setError(
+        err.response?.data?.message ||
+          "Failed to change password. Please try again."
+      );
+      toast.error(err.response?.data?.message || "Failed to change password.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (authLoading || !isAuthenticated) {
     return (
@@ -263,7 +271,7 @@ const ChangePassword = () => {
           {/* Back to Profile Link */}
           <div className="mt-8 text-center">
             <Link
-              to="/profile-page"
+               to={reduxUser?.role === "admin" ? "/admin-dashboard" : "/profile-page"}
               className="inline-flex items-center text-blue-base hover:underline font-medium text-lg"
             >
               <ArrowLeft className="h-5 w-5 mr-2" /> Back to Profile
