@@ -1,5 +1,7 @@
 import User from '../models/User.js';
+import Blog from '../models/Blog.js';
 import bcrypt from 'bcryptjs';
+
 
 export const getProfile = async (req, res) => {
   const user = await User.findById(req.user._id).select('-password');
@@ -26,10 +28,30 @@ export const updateUserProfile = async (req, res) => {
 };
 
 
-export const deleteAccount = async (req, res) => {
-  await User.findByIdAndDelete(req.user._id);
-  res.json({ message: 'Your account has been deleted' });
+
+export const deleteCurrentUser = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    // 1. Delete all blogs authored by this user
+    await Blog.deleteMany({ author: userId });
+
+    // 2. Remove this user's comments from all blogs
+    await Blog.updateMany(
+      { "comments.author": userId },
+      { $pull: { comments: { author: userId } } }
+    );
+
+    // 3. Delete the user account
+    await User.findByIdAndDelete(userId);
+
+    res.status(200).json({ message: "User, blogs, and comments deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting user and associated data:", error);
+    res.status(500).json({ message: "Server error during user deletion" });
+  }
 };
+
 
 export const updatePassword = async (req, res) => {
   const userId = req.user._id;

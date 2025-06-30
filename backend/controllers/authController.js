@@ -11,7 +11,6 @@ console.log('SendGrid API key loaded:', process.env.SENDGRID_API_KEY);
 
 export const register = async (req, res) => {
   try {
-    console.log("Register body received:", req.body);
 
     const { username, email, password, role = 'user' } = req.body;
 
@@ -59,7 +58,7 @@ export const login = async (req, res) => {
         role: user.role
       },
       process.env.JWT_SECRET,
-      { expiresIn: '1d' }
+      { expiresIn: '30m' }
     );
 
     res.json({

@@ -1,23 +1,43 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
+import * as jwtDecode from 'jwt-decode'; // ✅
+
 
 const getInitialAuthState = () => {
   try {
     const token = localStorage.getItem('authToken');
-    const user = localStorage.getItem('user'); 
+    const user = localStorage.getItem('user');
+
     if (token && user) {
+      const decoded = jwtDecode.default(token);
+
+
+      // Check if token is expired
+      if (decoded.exp * 1000 < Date.now()) {
+        console.log("Token expired, clearing auth...");
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+        return {
+          user: null,
+          isAuthenticated: false,
+          loading: false,
+          error: null,
+        };
+      }
+
       return {
-        user: JSON.parse(user), 
+        user: JSON.parse(user),
         isAuthenticated: true,
         loading: false,
         error: null,
       };
     }
   } catch (e) {
-    console.error("Failed to load auth state from localStorage:", e);
+    console.error("Failed to load or decode auth state:", e);
     localStorage.removeItem('authToken');
     localStorage.removeItem('user');
   }
+
   return {
     user: null,
     isAuthenticated: false,
