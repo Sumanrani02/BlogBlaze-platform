@@ -1,6 +1,5 @@
 import mongoose from 'mongoose'; 
 import Blog from '../models/Blog.js';
-import Post from "../models/Post.js";
 import cloudinary from '../utils/cloudinary.js';
 
 // Create new blog
@@ -64,7 +63,10 @@ export const getBlogById = async (req, res) => {
   }
 
   try {
-    const post = await Post.findById(id);
+      const post = await Blog.findById(id)
+  .populate('author', 'username')
+  .populate('comments.author', 'username avatarUrl'); // ✅ includes user data in comments
+
     if (!post) {
       return res.status(404).json({ error: 'Post not found' });
     }

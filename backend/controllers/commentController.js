@@ -5,7 +5,7 @@ import Blog from '../models/Blog.js';
 export const addComment = async (req, res) => {
   const { comment } = req.body;
   const { id } = req.params;
-  const userId = req.user?.id;
+  const userId = req.user?._id;
 
   if (!comment) {
     return res.status(400).json({ message: 'Comment cannot be empty' });

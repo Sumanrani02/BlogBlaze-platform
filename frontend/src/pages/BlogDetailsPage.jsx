@@ -183,7 +183,7 @@ const BlogDetailPage = () => {
             <div className="flex flex-wrap items-center text-blue-darker text-sm gap-4">
               <div className="flex items-center">
                 <User className="h-4 w-4 mr-1 text-blue-light" />
-                <span>By {post.author}</span>
+                <span>By {post.author?.username || "Unknown Author"}</span>
               </div>
               <div className="flex items-center">
                 <Calendar className="h-4 w-4 mr-1 text-blue-light" />
@@ -286,11 +286,11 @@ const BlogDetailPage = () => {
               {post.comments.length > 0 ? (
                 post.comments.map((comment) => (
                   <div
-                    key={comment.id}
+                    key={comment._id}
                     className="bg-pink-light p-5 rounded-lg shadow-sm border border-pink-base"
                   >
                     <p className="font-semibold text-blue-base mb-1">
-                      {comment.user?.username || "Unknown User"}
+                      {comment.author?.username || "Unknown User"}
                     </p>
                     <p className="text-blue-darker text-sm">{comment.text}</p>
                     <p className="text-xs text-gray-500 mt-2">{comment.date}</p>
