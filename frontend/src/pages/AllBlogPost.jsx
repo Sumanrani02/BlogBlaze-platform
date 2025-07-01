@@ -18,7 +18,7 @@ const AllPostsPage = () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await axios.get("http://localhost:5000/api/posts"); 
+        const response = await axios.get("http://localhost:5000/api/posts");
         setPosts(response.data);
       } catch (err) {
         setError("Failed to load blog posts. Please try again later.");
@@ -98,36 +98,10 @@ const AllPostsPage = () => {
 
       <main className="flex-grow container mx-auto py-12 px-4 sm:px-6 lg:px-8">
         {/* Filter and Search Section */}
-        <div className="bg-white p-6 rounded-xl shadow-md mb-10 border border-pink-base">
+        <div className="bg-white p-4 rounded-xl shadow-md mb-10 border border-pink-base">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            {/* Category Filter */}
-            <div className="w-full md:w-auto flex flex-col items-center md:items-start">
-              <label
-                htmlFor="category-select"
-                className="text-blue-darker font-bold mb-2 flex items-center"
-              >
-                <ListFilter className="h-5 w-5 mr-2 text-blue-light" /> Filter
-                by Category:
-              </label>
-              <select
-                id="category-select"
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full md:w-auto p-3 rounded-md border border-pink-darker bg-offwhite text-blue-darker focus:outline-none focus:ring-2 focus:ring-blue-light cursor-pointer shadow-sm"
-              >
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
-            </div>
-
             {/* Search Bar */}
             <div className="w-full md:w-1/2 relative">
-              <label htmlFor="search-input" className="sr-only">
-                Search Posts
-              </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Search className="h-5 w-5 text-blue-light" />
@@ -141,6 +115,28 @@ const AllPostsPage = () => {
                   className="w-full p-3 pl-10 rounded-md border border-pink-darker bg-offwhite text-blue-darker focus:outline-none focus:ring-2 focus:ring-blue-light shadow-sm"
                 />
               </div>
+            </div>
+            {/* Category Filter */}
+            <div className="w-full md:w-auto flex items-center justify-center md:justify-start gap-x-4">
+              <label
+                htmlFor="category-select"
+                className="text-blue-darker font-medium"
+              >
+               Filter By 
+               Category
+              </label>
+              <select
+                id="category-select"
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="w-full md:w-auto p-3 rounded-md border border-pink-darker bg-offwhite text-blue-darker focus:outline-none focus:ring-2 focus:ring-blue-light cursor-pointer shadow-sm"
+              >
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </div>

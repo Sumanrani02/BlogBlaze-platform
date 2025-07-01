@@ -1,5 +1,5 @@
-import React from "react";
-import { Menu, X } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { Menu, X, User } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { logout } from "../redux/authSlice";
@@ -7,17 +7,23 @@ import toast from "react-hot-toast";
 import logo from "../assets/blg2.svg";
 
 const Navbar = () => {
-  const [isOpen, setIsOpen] = React.useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
 
-  // Get authentication state from Redux store
   const { isAuthenticated, user: reduxUser } = useSelector(
     (state) => state.auth
   );
   const dispatch = useDispatch();
+  const profileDropdownRef = useRef(null);
 
-  // Function to toggle mobile menu
   const toggleMenu = () => {
     setIsOpen(!isOpen);
+    setIsProfileDropdownOpen(false);
+  };
+
+  const toggleProfileDropdown = () => {
+    setIsProfileDropdownOpen(!isProfileDropdownOpen);
+    setIsOpen(false);
   };
 
   // Handle logout
@@ -25,9 +31,26 @@ const Navbar = () => {
     dispatch(logout());
     toast.success("Logged Out Successfully!");
     setIsOpen(false);
+    setIsProfileDropdownOpen(false);
   };
 
   const isAdmin = isAuthenticated && reduxUser?.role === "admin";
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        profileDropdownRef.current &&
+        !profileDropdownRef.current.contains(event.target)
+      ) {
+        setIsProfileDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   return (
     <nav className="bg-blue-base p-4 shadow-md w-full font-inter">
@@ -44,12 +67,6 @@ const Navbar = () => {
           {!isAdmin && (
             <>
               <Link
-                to="/"
-                className="text-pink-base hover:text-pink-light transition-colors duration-200 text-lg font-medium rounded-md px-3 py-2"
-              >
-                Home
-              </Link>
-              <Link
                 to="/posts"
                 className="text-pink-base hover:text-pink-light transition-colors duration-200 text-lg font-medium rounded-md px-3 py-2"
               >
@@ -65,8 +82,9 @@ const Navbar = () => {
               >
                 Write for Us
               </Link>
+           
               <Link
-                to="/profile-page"
+                to="/dashboard"
                 className="text-pink-base hover:text-pink-light transition-colors duration-200 text-lg font-medium rounded-md px-3 py-2"
               >
                 Dashboard
@@ -95,12 +113,44 @@ const Navbar = () => {
               </Link>
             </>
           ) : (
-            <button
-              onClick={handleLogout}
-              className="px-5 py-2 bg-pink-darker text-offwhite font-bold rounded-full shadow-lg hover:bg-pink-dark transition-all duration-300 transform hover:scale-105 text-lg"
-            >
-              Log Out
-            </button>
+            <div className="relative" ref={profileDropdownRef}>
+              <button
+                onClick={toggleProfileDropdown}
+                className="flex items-center justify-center w-10 h-10 rounded-full bg-pink-base text-blue-base font-bold text-lg cursor-pointer shadow-lg hover:bg-pink-light transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-pink-light"
+                title="Profile"
+              >
+                {reduxUser?.role === "user" ? (
+                  <img
+                    src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSSyGhUIYBA8rPXY2lczYsz-bcc1yf5D5vRww&s"
+                    alt="Profile"
+                    className="w-full h-full rounded-full object-cover"
+                  />
+                ) : (
+                  <img
+                    src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSWXlq_0NnSV8hKKuokYeyhIO_PG-K6APYIHA&s"
+                    alt="Profile"
+                    className="w-full h-full rounded-full object-cover"
+                  />
+                )}
+              </button>
+              {isProfileDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-20 border border-pink-light">
+                  <Link
+                    to="/profile-page"
+                    onClick={() => setIsProfileDropdownOpen(false)}
+                    className="block px-4 py-2 text-blue-darker hover:bg-blue-light hover:text-white transition-colors duration-200"
+                  >
+                    Edit Profile
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="block w-full text-left px-4 py-2 text-blue-darker hover:bg-blue-light hover:text-white transition-colors duration-200"
+                  >
+                    Log Out
+                  </button>
+                </div>
+              )}
+            </div>
           )}
         </div>
 
@@ -119,15 +169,6 @@ const Navbar = () => {
       {isOpen && (
         <div className="md:hidden bg-blue-dark py-4 px-4 shadow-lg animate-slideInDown">
           <div className="flex flex-col items-start space-y-4">
-            {!isAdmin && (
-              <Link
-                to="/"
-                onClick={() => setIsOpen(false)}
-                className="block text-pink-base hover:text-pink-light transition-colors duration-200 text-lg font-medium w-full px-4 py-2 rounded-md"
-              >
-                Home
-              </Link>
-            )}
             {!isAdmin && (
               <Link
                 to="/posts"

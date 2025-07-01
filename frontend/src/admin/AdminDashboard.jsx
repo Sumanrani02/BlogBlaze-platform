@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import Navbar from "../layout/Navbar";
 import Footer from "../layout/Footer";
@@ -12,15 +12,10 @@ import {
   MessageSquare,
   Trash2,
   ShieldCheck,
+  Eye,
   AlertCircle,
-  Mail,
-  Calendar,
-  Edit,
-  KeyRound,
-  Trash,
-  Save,
-  XCircle,
 } from "lucide-react";
+
 import axios from "axios";
 
 const AdminDashboard = () => {
@@ -37,11 +32,7 @@ const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
   const [blogs, setBlogs] = useState([]);
   const [comments, setComments] = useState([]);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedUsername, setEditedUsername] = useState("");
-  const [editedEmail, setEditedEmail] = useState("");
-  const [userProfile, setUserProfile] = useState({});
-  const [isDeleting, setIsDeleting] = useState(false);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalConfig, setModalConfig] = useState({
     title: "",
@@ -62,32 +53,9 @@ const AdminDashboard = () => {
       );
       navigate("/login");
     } else {
-      fetchAdminProfile();
       fetchData(activeTab);
     }
   }, [isAuthenticated, authLoading, navigate, activeTab]);
-
-  const fetchAdminProfile = async () => {
-    setPageLoading(true);
-    setPageError(null);
-    try {
-      const config = {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-        },
-      };
-      const response = await axios.get(`${API_BASE_URL}/users/profile`, config);
-      setUserProfile(response.data);
-      setEditedUsername(response.data.username);
-      setEditedEmail(response.data.email);
-    } catch (err) {
-      console.error("Failed to fetch admin profile:", err);
-      setPageError("Failed to load your profile. Please try again.");
-      toast.error("Failed to load admin profile.");
-    } finally {
-      setPageLoading(false);
-    }
-  };
 
   const fetchData = async (tab) => {
     setLoading(true);
@@ -104,19 +72,41 @@ const AdminDashboard = () => {
         setUsers(response.data);
       } else if (tab === "blogs") {
         const response = await axios.get(`${API_BASE_URL}/admin/blogs`, config);
-        setBlogs(response.data);
+       const transformedBlogs = response.data.map(blog => ({
+          _id: blog.id,
+          title: blog.title,
+          category: blog.category,
+          date: blog.date, 
+          author: { 
+            username: blog.authorName || "Unknown" 
+          }
+        }));
+        setBlogs(transformedBlogs);
       } else if (tab === "comments") {
         const response = await axios.get(
           `${API_BASE_URL}/admin/comments`,
           config
         );
-        setComments(response.data);
+         const transformedComments = response.data.map(comment => ({
+          _id: comment.id, 
+          text: comment.content || '', 
+          date: comment.date, 
+          author: { 
+            username: comment.authorName || "Unknown"
+          },
+          post: { 
+            _id: comment.blogId, 
+            title: comment.blogTitle || "Untitled",
+          },
+        }));
+        setComments(transformedComments);
       }
     } catch (err) {
       setError(`Failed to load ${tab}. Please try again.`);
       toast.error(`Failed to load ${tab}.`);
     } finally {
       setLoading(false);
+      setPageLoading(false);
     }
   };
 
@@ -127,8 +117,10 @@ const AdminDashboard = () => {
 
     if (itemType === "user") {
       title = "Delete User";
-      message = "Are you sure you want to delete this user?";
+      message =
+        "Are you absolutely sure you want to delete this user? This action is irreversible and all their associated data (blogs, comments) will be permanently removed.";
       confirmAction = async () => {
+        setModalConfig((prev) => ({ ...prev, isLoading: true }));
         try {
           const config = {
             headers: {
@@ -146,12 +138,15 @@ const AdminDashboard = () => {
           toast.error(err.response?.data?.message || "Failed to delete user.");
         } finally {
           setIsModalOpen(false);
+          setModalConfig((prev) => ({ ...prev, isLoading: false }));
         }
       };
     } else if (itemType === "blog") {
       title = "Delete Blog";
-      message = "Are you sure you want to delete this blog?";
+      message =
+        "Are you absolutely sure you want to delete this blog post? This action is irreversible and all its associated comments will be permanently removed.";
       confirmAction = async () => {
+        setModalConfig((prev) => ({ ...prev, isLoading: true }));
         try {
           const config = {
             headers: {
@@ -160,7 +155,7 @@ const AdminDashboard = () => {
           };
           await axios.delete(`${API_BASE_URL}/admin/blogs/${itemId}`, config);
           setBlogs((prevBlogs) =>
-            prevBlogs.filter((blog) => blog.id !== itemId)
+            prevBlogs.filter((blog) => blog._id !== itemId)
           );
           toast.success("Blog deleted successfully.");
         } catch (err) {
@@ -168,12 +163,15 @@ const AdminDashboard = () => {
           toast.error(err.response?.data?.message || "Failed to delete blog.");
         } finally {
           setIsModalOpen(false);
+          setModalConfig((prev) => ({ ...prev, isLoading: false }));
         }
       };
     } else if (itemType === "comment") {
       title = "Delete Comment";
-      message = "Are you sure you want to delete this comment?";
+      message =
+        "Are you absolutely sure you want to delete this comment? This action is irreversible.";
       confirmAction = async () => {
+        setModalConfig((prev) => ({ ...prev, isLoading: true }));
         const config = {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("authToken")}`,
@@ -185,7 +183,7 @@ const AdminDashboard = () => {
             config
           );
           setComments((prevComments) =>
-            prevComments.filter((comment) => comment.id !== itemId)
+            prevComments.filter((comment) => comment._id !== itemId)
           );
           toast.success("Comment deleted successfully.");
         } catch (err) {
@@ -195,6 +193,7 @@ const AdminDashboard = () => {
           );
         } finally {
           setIsModalOpen(false);
+          setModalConfig((prev) => ({ ...prev, isLoading: false }));
         }
       };
     }
@@ -202,104 +201,13 @@ const AdminDashboard = () => {
     setModalConfig({
       title,
       message,
-      confirmText: "Delete",
+      confirmText: `Yes, Delete ${
+        itemType.charAt(0).toUpperCase() + itemType.slice(1)
+      }`,
       onConfirm: confirmAction,
       isLoading: false,
     });
     setIsModalOpen(true);
-  };
-
-  const handleSaveProfile = async (e) => {
-    e.preventDefault();
-    setPageLoading(true);
-    setPageError(null);
-
-    try {
-      const token = localStorage.getItem("authToken");
-
-      const res = await fetch(`${API_BASE_URL}/users/profile`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          username: editedUsername,
-          email: editedEmail,
-        }),
-      });
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(`Update failed: ${errorText}`);
-      }
-
-      const updatedUser = await res.json();
-      setUserProfile({
-        ...updatedUser,
-        memberSince: new Date(updatedUser.createdAt).toLocaleDateString(
-          "en-IN",
-          {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          }
-        ),
-      });
-
-      setIsEditing(false);
-      toast.success("Profile updated successfully!");
-    } catch (err) {
-      console.error("Error saving profile:", err);
-      setPageError(err.message || "Failed to save profile. Please try again.");
-    } finally {
-      setPageLoading(false);
-    }
-  };
-
-  const handleDeleteProfile = async () => {
-    if (!userProfile?._id) return;
-    setModalConfig({
-      title: "Delete Profile",
-      message:
-        "Are you sure you want to delete your profile? This action cannot be undone.",
-      confirmText: "Delete",
-      onConfirm: async () => {
-        setModalConfig((prev) => ({ ...prev, isLoading: true }));
-        try {
-          const res = await fetch(`${API_BASE_URL}/users/me`, {
-            method: "DELETE",
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-            },
-          });
-          if (!res.ok) throw new Error("Failed to delete the user.");
-          toast.success("Your account has been successfully deleted.");
-          localStorage.removeItem("authToken");
-          navigate("/login");
-        } catch (err) {
-          console.error("Error during user deletion:", err);
-          toast.error("Failed to delete your account. Please try again.");
-        } finally {
-          setModalConfig((prev) => ({ ...prev, isLoading: false }));
-          setIsModalOpen(false);
-        }
-      },
-      isLoading: false,
-    });
-    setIsModalOpen(true);
-  };
-
-  const handleCancelEdit = () => {
-    setIsEditing(false);
-    if (userProfile) {
-      setEditedUsername(userProfile.username);
-      setEditedEmail(userProfile.email);
-    }
-  };
-
-  const handleChangePasswordClick = () => {
-    navigate("/change-password");
   };
 
   const handleCloseModal = () => {
@@ -307,210 +215,133 @@ const AdminDashboard = () => {
     setModalConfig((prev) => ({ ...prev, isLoading: false }));
   };
 
-  if (authLoading || (!isAuthenticated && !authLoading)) {
+  if (pageLoading || authLoading || (!isAuthenticated && !authLoading)) {
     return (
       <>
         <Navbar />
-        <div className="min-h-screen flex flex-col justify-center items-center bg-offwhite font-inter">
-          <Spinner className="h-16 w-16 text-blue-base" />
-          <p className="mt-4 text-xl text-blue-darker">Authenticating...</p>
+        <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-blue-100 via-pink-50 to-blue-50 font-inter">
+          <Spinner className="h-16 w-16 text-blue-base animate-spin-slow" />
+          <p className="mt-4 text-2xl font-bold text-blue-darker animate-pulse">
+            Authenticating and loading admin dashboard...
+          </p>
         </div>
+        <Footer />
+      </>
+    );
+  }
+
+  if (pageError) {
+    return (
+      <>
+        <Navbar />
+        <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-red-50 to-orange-50 font-inter p-4">
+          <p className="text-red-700 text-2xl font-extrabold text-center">
+            Access Denied or Error!
+          </p>
+          <p className="text-red-500 text-lg mt-3 text-center">{pageError}</p>
+          <p className="text-gray-600 mt-5 text-center">
+            Please ensure you are logged in as an administrator.
+          </p>
+          <button
+            onClick={() => navigate("/login")}
+            className="mt-6 px-8 py-3 bg-blue-base text-white font-semibold rounded-full shadow-lg hover:bg-blue-dark transition-all duration-300 transform hover:scale-105"
+          >
+            Go to Login
+          </button>
+        </div>
+        <Footer />
       </>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-offwhite font-inter">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-100 via-pink-50 to-blue-50 font-inter relative overflow-hidden">
+      <div className="absolute bottom-0 left-1/4 w-64 h-64 bg-pink-100 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
+      <div className="absolute bottom-1/4 right-0 w-64 h-64 bg-blue-100 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-6000"></div>
+
       <Navbar />
 
-      <main className="flex-grow container mx-auto py-12 px-4 sm:px-6 lg:px-8 max-w-6xl">
-        <h1 className="text-5xl font-extrabold text-blue-darker mb-10 text-center leading-tight flex items-center justify-center">
-          <ShieldCheck className="h-12 w-12 mr-4 text-green-base" /> Welcome
-          Admin
+      <main className="flex-grow container mx-auto py-16 px-4 sm:px-6 lg:px-8 max-w-6xl z-10 relative">
+        <h1 className="text-6xl font-extrabold text-blue-darker mb-12 text-center leading-tight tracking-wider drop-shadow-lg animate-fade-in">
+          <ShieldCheck className="inline-block h-16 w-16 mr-4 text-green-base" />{" "}
+          Welcome   Admin
         </h1>
 
-        <section className="bg-white rounded-xl shadow-lg p-6 md:p-10 mb-10 border border-pink-base">
-          <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
-            {/* Avatar */}
-            <div className="flex-shrink-0">
-              <img
-                src={
-                  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSWXlq_0NnSV8hKKuokYeyhIO_PG-K6APYIHA&s"
-                } // Fallback for avatar
-                alt={`Admin's avatar`}
-                className="w-32 h-32 rounded-full object-cover border-4 border-blue-base shadow-md"
-              />
-            </div>
-
-            {/* User Details / Edit Form */}
-            <div className="flex-grow text-center md:text-left">
-              {!isEditing ? (
-                // Display Mode
-                <div className="space-y-3">
-                  <h2 className="text-3xl font-bold text-blue-base">
-                    {userProfile.username}
-                  </h2>
-                  <p className="text-blue-darker flex items-center justify-center md:justify-start text-lg">
-                    <Mail className="h-5 w-5 mr-2 text-blue-light" />{" "}
-                    {userProfile.email}
-                  </p>
-                  <p className="text-gray-600 flex items-center justify-center md:justify-start text-sm">
-                    <Calendar className="h-4 w-4 mr-2 text-blue-light" /> Member
-                    since: {userProfile.memberSince || "N/A"}
-                  </p>
-                  <div className="flex flex-wrap gap-3 mt-4 justify-center md:justify-start">
-                    <button
-                      onClick={() => setIsEditing(true)}
-                      className="mt-4 inline-flex items-center px-6 py-2 bg-pink-base text-blue-base font-semibold rounded-full shadow-md hover:bg-pink-dark transition-colors duration-300 transform hover:scale-105"
-                    >
-                      <Edit className="h-4 w-4 mr-2" /> Edit Profile
-                    </button>
-                    <button
-                      onClick={handleChangePasswordClick}
-                      className="mt-4 ml-3 inline-flex items-center px-6 py-2 bg-blue-light text-offwhite font-semibold rounded-full shadow-md hover:bg-blue-base transition-colors duration-300 transform hover:scale-105"
-                    >
-                      <KeyRound className="h-4 w-4 mr-2" /> Change Password
-                    </button>
-                    {/* New: Delete Profile Button */}
-                    <button
-                      onClick={handleDeleteProfile}
-                      className="mt-4 ml-3 inline-flex items-center px-6 py-2 bg-red-500 text-white font-semibold rounded-full shadow-md hover:bg-red-600 transition-colors duration-300 transform hover:scale-105"
-                    >
-                      <Trash className="h-4 w-4 mr-2" /> Delete Profile
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                // Edit Mode
-                <form onSubmit={handleSaveProfile} className="space-y-4">
-                  <div>
-                    <label
-                      htmlFor="edit-username"
-                      className="block text-blue-darker text-sm font-bold mb-1"
-                    >
-                      Username
-                    </label>
-                    <input
-                      type="text"
-                      id="edit-username"
-                      value={editedUsername}
-                      onChange={(e) => setEditedUsername(e.target.value)}
-                      className="w-full p-3 rounded-md border border-pink-darker bg-offwhite text-blue-darker focus:outline-none focus:ring-2 focus:ring-blue-light"
-                      required
-                      disabled={pageLoading} // Disable inputs during save
-                    />
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="edit-email"
-                      className="block text-blue-darker text-sm font-bold mb-1"
-                    >
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      id="edit-email"
-                      value={editedEmail}
-                      onChange={(e) => setEditedEmail(e.target.value)}
-                      className="w-full p-3 rounded-md border border-pink-darker bg-offwhite text-blue-darker focus:outline-none focus:ring-2 focus:ring-blue-light"
-                      required
-                      disabled={pageLoading}
-                    />
-                  </div>
-                  <div className="flex gap-4 mt-4 justify-center md:justify-start">
-                    <button
-                      type="submit"
-                      className="inline-flex items-center px-6 py-2 bg-blue-base text-pink-base font-semibold rounded-full shadow-md hover:bg-blue-dark transition-colors duration-300 transform hover:scale-105"
-                      disabled={pageLoading}
-                    >
-                      {pageLoading ? (
-                        <Spinner className="h-4 w-4 mr-2" />
-                      ) : (
-                        <Save className="h-4 w-4 mr-2" />
-                      )}{" "}
-                      Save Changes
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleCancelEdit}
-                      className="inline-flex items-center px-6 py-2 bg-pink-darker text-offwhite font-semibold rounded-full shadow-md hover:bg-pink-dark transition-colors duration-300 transform hover:scale-105"
-                      disabled={pageLoading}
-                    >
-                      <XCircle className="h-4 w-4 mr-2" /> Cancel
-                    </button>
-                  </div>
-                  {pageError && (
-                    <p className="text-red-600 text-sm mt-2 text-center md:text-left">
-                      {pageError}
-                    </p>
-                  )}
-                </form>
-              )}
-            </div>
-          </div>
-        </section>
-
         {/* Tab Navigation */}
-        <div className="bg-white rounded-t-xl shadow-md p-4 flex justify-center border-b-2 border-blue-base">
+        <div className="bg-white rounded-t-3xl shadow-xl p-4 flex flex-wrap justify-center gap-4 border-b-2 border-blue-base relative z-20">
           <button
             onClick={() => setActiveTab("users")}
-            className={`px-6 py-3 text-lg font-semibold rounded-t-lg transition-colors duration-200 ${
+            className={`px-8 py-3 text-lg font-bold rounded-full transition-all duration-300 transform hover:scale-105 inline-flex items-center ${
               activeTab === "users"
-                ? "bg-blue-base text-offwhite"
-                : "text-blue-darker hover:bg-gray-100"
+                ? "bg-blue-base text-offwhite shadow-md"
+                : "text-blue-darker hover:bg-blue-50"
             }`}
           >
-            <User className="inline-block h-5 w-5 mr-2" /> Users
+            <User className="inline-block h-6 w-6 mr-3" /> Manage Users
           </button>
           <button
             onClick={() => setActiveTab("blogs")}
-            className={`px-6 py-3 text-lg font-semibold rounded-t-lg transition-colors duration-200 ${
+            className={`px-8 py-3 text-lg font-bold rounded-full transition-all duration-300 transform hover:scale-105 inline-flex items-center ${
               activeTab === "blogs"
-                ? "bg-blue-base text-offwhite"
-                : "text-blue-darker hover:bg-gray-100"
+                ? "bg-blue-base text-offwhite shadow-md"
+                : "text-blue-darker hover:bg-blue-50"
             }`}
           >
-            <BookOpen className="inline-block h-5 w-5 mr-2" /> Blogs
+            <BookOpen className="inline-block h-6 w-6 mr-3" /> Manage Blogs
           </button>
           <button
             onClick={() => setActiveTab("comments")}
-            className={`px-6 py-3 text-lg font-semibold rounded-t-lg transition-colors duration-200 ${
+            className={`px-8 py-3 text-lg font-bold rounded-full transition-all duration-300 transform hover:scale-105 inline-flex items-center ${
               activeTab === "comments"
-                ? "bg-blue-base text-offwhite"
-                : "text-blue-darker hover:bg-gray-100"
+                ? "bg-blue-base text-offwhite shadow-md"
+                : "text-blue-darker hover:bg-blue-50"
             }`}
           >
-            <MessageSquare className="inline-block h-5 w-5 mr-2" /> Comments
+            <MessageSquare className="inline-block h-6 w-6 mr-3" /> Manage
+            Comments
           </button>
         </div>
 
         {/* Content Area */}
-        <div className="bg-white rounded-b-xl shadow-lg p-6 md:p-8  border-t-0 border-blue-base min-h-[500px]">
+        <div className="bg-white rounded-b-3xl shadow-2xl p-8 md:p-12 border-t-0 border-blue-base min-h-[500px] relative z-20 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-pink-50/50 opacity-40 rounded-b-3xl"></div>{" "}
+          {/* Gradient for content area */}
           {loading ? (
-            <div className="flex justify-center items-center h-full">
-              <Spinner className="h-16 w-16 text-blue-base" />
-              <p className="ml-4 text-xl text-blue-darker">
+            <div className="flex justify-center items-center h-full min-h-[300px] relative z-10">
+              <Spinner className="h-16 w-16 text-blue-base animate-spin-slow" />
+              <p className="ml-4 text-2xl font-bold text-blue-darker animate-pulse">
                 Loading {activeTab} data...
+              </p>
+            </div>
+          ) : error ? (
+            <div className="flex flex-col justify-center items-center h-full min-h-[300px] relative z-10">
+              <AlertCircle className="h-20 w-20 text-red-500 mb-4" />
+              <p className="text-red-600 text-xl font-semibold text-center">
+                {error}
+              </p>
+              <p className="text-gray-600 mt-2 text-center">
+                Please try switching tabs or refreshing the page.
               </p>
             </div>
           ) : (
             <>
               {activeTab === "users" && (
-                <div>
+                <div className="relative z-10">
                   <h2 className="text-3xl font-bold text-blue-darker mb-6">
                     Manage Users
                   </h2>
                   {users.length > 0 ? (
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full bg-offwhite rounded-lg shadow-sm">
+                    <div className="overflow-x-auto rounded-xl shadow-md border border-gray-200">
+                      <table className="min-w-full bg-offwhite">
                         <thead>
-                          <tr className="bg-pink-light text-blue-darker text-left text-sm font-semibold uppercase tracking-wider">
-                            <th className="py-3 px-4 rounded-tl-lg">
+                          <tr className="bg-blue-light text-offwhite text-left text-sm font-semibold uppercase tracking-wider rounded-t-xl">
+                            <th className="py-4 px-6 rounded-tl-xl">
                               Username
                             </th>
-                            <th className="py-3 px-4">Email</th>
-                            <th className="py-3 px-4">Member Since</th>
-                            <th className="py-3 px-4 rounded-tr-lg text-center">
+                            <th className="py-4 px-6">Email</th>
+                            <th className="py-4 px-6">Role</th>{" "}
+                            <th className="py-4 px-6">Member Since</th>
+                            <th className="py-4 px-6 rounded-tr-xl text-center">
                               Actions
                             </th>
                           </tr>
@@ -519,21 +350,25 @@ const AdminDashboard = () => {
                           {users.map((user) => (
                             <tr
                               key={user._id}
-                              className="border-b border-gray-200 last:border-b-0"
+                              className="border-b border-gray-200 last:border-b-0 hover:bg-blue-50 transition-colors duration-200"
                             >
-                              <td className="py-3 px-4 text-blue-darker">
+                              <td className="py-3 px-6 text-blue-darker font-medium">
                                 {user.username}
                               </td>
-                              <td className="py-3 px-4 text-blue-darker">
+                              <td className="py-3 px-6 text-blue-darker">
                                 {user.email}
                               </td>
-                              <td className="py-3 px-4 text-blue-darker">
+                              <td className="py-3 px-6 text-blue-darker capitalize">
+                                {user.role}
+                              </td>
+                              <td className="py-3 px-6 text-blue-darker">
                                 {user.memberSince}
                               </td>
-                              <td className="py-3 px-4 text-center">
+                              <td className="py-3 px-6 text-center">
                                 <button
                                   onClick={() => handleDelete("user", user._id)}
-                                  className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors duration-200"
+                                  className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-sm transition-colors duration-200 transform hover:scale-110"
+                                  title="Delete User"
                                 >
                                   <Trash2 className="h-5 w-5" />
                                 </button>
@@ -544,7 +379,7 @@ const AdminDashboard = () => {
                       </table>
                     </div>
                   ) : (
-                    <p className="text-blue-darker text-center py-8">
+                    <p className="text-blue-darker text-center py-8 text-xl">
                       No users found.
                     </p>
                   )}
@@ -552,20 +387,20 @@ const AdminDashboard = () => {
               )}
 
               {activeTab === "blogs" && (
-                <div>
+                <div className="relative z-10">
                   <h2 className="text-3xl font-bold text-blue-darker mb-6">
                     Manage Blog Posts
                   </h2>
                   {blogs.length > 0 ? (
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full bg-offwhite rounded-lg shadow-sm">
+                    <div className="overflow-x-auto rounded-xl shadow-md border border-gray-200">
+                      <table className="min-w-full bg-offwhite">
                         <thead>
-                          <tr className="bg-pink-light text-blue-darker text-left text-sm font-semibold uppercase tracking-wider">
-                            <th className="py-3 px-4 rounded-tl-lg">Title</th>
-                            <th className="py-3 px-4">Author</th>
-                            <th className="py-3 px-4">Category</th>
-                            <th className="py-3 px-4">Date</th>
-                            <th className="py-3 px-4 rounded-tr-lg text-center">
+                          <tr className="bg-blue-light text-offwhite text-left text-sm font-semibold uppercase tracking-wider rounded-t-xl">
+                            <th className="py-4 px-6 rounded-tl-xl">Title</th>
+                            <th className="py-4 px-6">Author</th>
+                            <th className="py-4 px-6">Category</th>
+                            <th className="py-4 px-6">Date</th>
+                            <th className="py-4 px-6 rounded-tr-xl text-center">
                               Actions
                             </th>
                           </tr>
@@ -573,25 +408,34 @@ const AdminDashboard = () => {
                         <tbody>
                           {blogs.map((blog) => (
                             <tr
-                              key={blog.id}
-                              className="border-b border-gray-200 last:border-b-0"
+                              key={blog._id}
+                              className="border-b border-gray-200 last:border-b-0 hover:bg-blue-50 transition-colors duration-200"
                             >
-                              <td className="py-3 px-4 text-blue-darker">
+                              <td className="py-3 px-6 text-blue-darker font-medium">
                                 {blog.title}
                               </td>
-                              <td className="py-3 px-4 text-blue-darker">
-                                {blog.authorName}
+                              <td className="py-3 px-6 text-blue-darker">
+                                {blog.author?.username || "N/A"}
                               </td>
-                              <td className="py-3 px-4 text-blue-darker">
-                                {blog.category}
+                              <td className="py-3 px-6 text-blue-darker">
+                                {blog.category || "General"}
                               </td>
-                              <td className="py-3 px-4 text-blue-darker">
+                              <td className="py-3 px-6 text-blue-darker">
                                 {blog.date}
                               </td>
-                              <td className="py-3 px-4 text-center">
+                              <td className="py-3 px-6 text-center space-x-2 flex justify-center items-center">
+                                <Link
+                                  to={`/post/${blog._id}`}
+                                  target="_blank"
+                                  className="p-2 bg-blue-base text-white rounded-full hover:bg-blue-dark shadow-sm transition-colors duration-200 transform hover:scale-110"
+                                  title="View Blog"
+                                >
+                                  <Eye className="h-5 w-5" />
+                                </Link>
                                 <button
-                                  onClick={() => handleDelete("blog", blog.id)}
-                                  className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors duration-200"
+                                  onClick={() => handleDelete("blog", blog._id)}
+                                  className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-sm transition-colors duration-200 transform hover:scale-110"
+                                  title="Delete Blog"
                                 >
                                   <Trash2 className="h-5 w-5" />
                                 </button>
@@ -602,7 +446,7 @@ const AdminDashboard = () => {
                       </table>
                     </div>
                   ) : (
-                    <p className="text-blue-darker text-center py-8">
+                    <p className="text-blue-darker text-center py-8 text-xl">
                       No blog posts found.
                     </p>
                   )}
@@ -610,20 +454,20 @@ const AdminDashboard = () => {
               )}
 
               {activeTab === "comments" && (
-                <div>
+                <div className="relative z-10">
                   <h2 className="text-3xl font-bold text-blue-darker mb-6">
                     Manage Comments
                   </h2>
                   {comments.length > 0 ? (
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full bg-offwhite rounded-lg shadow-sm">
+                    <div className="overflow-x-auto rounded-xl shadow-md border border-gray-200">
+                      <table className="min-w-full bg-offwhite">
                         <thead>
-                          <tr className="bg-pink-light text-blue-darker text-left text-sm font-semibold uppercase tracking-wider">
-                            <th className="py-3 px-4 rounded-tl-lg">Comment</th>
-                            <th className="py-3 px-4">Author</th>
-                            <th className="py-3 px-4">Blog ID</th>
-                            <th className="py-3 px-4">Date</th>
-                            <th className="py-3 px-4 rounded-tr-lg text-center">
+                          <tr className="bg-blue-light text-offwhite text-left text-sm font-semibold uppercase tracking-wider rounded-t-xl">
+                            <th className="py-4 px-6 rounded-tl-xl">Comment</th>
+                            <th className="py-4 px-6">Author</th>
+                            <th className="py-4 px-6">On Blog</th>{" "}
+                            <th className="py-4 px-6">Date</th>
+                            <th className="py-4 px-6 rounded-tr-xl text-center">
                               Actions
                             </th>
                           </tr>
@@ -631,27 +475,28 @@ const AdminDashboard = () => {
                         <tbody>
                           {comments.map((comment) => (
                             <tr
-                              key={comment.id}
-                              className="border-b border-gray-200 last:border-b-0"
+                              key={comment._id}
+                              className="border-b border-gray-200 last:border-b-0 hover:bg-blue-50 transition-colors duration-200"
                             >
-                              <td className="py-3 px-4 text-blue-darker max-w-xs overflow-hidden text-ellipsis whitespace-nowrap">
-                                {comment.content}
+                              <td className="py-3 px-6 text-blue-darker max-w-xs overflow-hidden text-ellipsis whitespace-nowrap font-medium">
+                                {comment.text}{" "}
                               </td>
-                              <td className="py-3 px-4 text-blue-darker">
-                                {comment.authorName}
+                              <td className="py-3 px-6 text-blue-darker">
+                                {comment.author?.username || "N/A"}
                               </td>
-                              <td className="py-3 px-4 text-blue-darker">
-                                {comment.blogId}
+                              <td className="py-3 px-6 text-blue-darker">
+                                {comment.post?.title || "Unknown Post"}
                               </td>
-                              <td className="py-3 px-4 text-blue-darker">
+                              <td className="py-3 px-6 text-blue-darker">
                                 {comment.date}
                               </td>
-                              <td className="py-3 px-4 text-center">
+                              <td className="py-3 px-6 text-center">
                                 <button
                                   onClick={() =>
-                                    handleDelete("comment", comment.id)
+                                    handleDelete("comment", comment._id)
                                   }
-                                  className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors duration-200"
+                                  className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-sm transition-colors duration-200 transform hover:scale-110"
+                                  title="Delete Comment"
                                 >
                                   <Trash2 className="h-5 w-5" />
                                 </button>
@@ -662,7 +507,7 @@ const AdminDashboard = () => {
                       </table>
                     </div>
                   ) : (
-                    <p className="text-blue-darker text-center py-8">
+                    <p className="text-blue-darker text-center py-8 text-xl">
                       No comments found.
                     </p>
                   )}

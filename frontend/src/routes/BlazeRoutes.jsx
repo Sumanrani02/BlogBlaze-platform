@@ -13,6 +13,7 @@ import ForgotPassword from "../component/auth/ForgotPassword";
 import ResetPassword from "../component/auth/ResetPassword";
 import ChangePassword from "../component/auth/ChangePassword";
 import AdminDashboard from "../admin/AdminDashboard";
+import Dashboard from "../pages/Dashborad";
 const BlazeRoutes = () => {
   return (
     <>
@@ -48,6 +49,14 @@ const BlazeRoutes = () => {
           element={
             <ProtectedRoute>
               <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
             </ProtectedRoute>
           }
         />
