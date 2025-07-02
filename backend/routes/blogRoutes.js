@@ -15,6 +15,8 @@ import upload from '../middleware/multer.js';
 
 const router = express.Router();
 
+
+
 // Blog routes
 router.get('/', getAllBlogs);
 router.get('/featured', getFeaturedPosts);

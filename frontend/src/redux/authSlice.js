@@ -1,9 +1,8 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 import * as jwtDecode from 'jwt-decode';
- 
 
-
+// Utility function to get initial state from localStorage
 const getInitialAuthState = () => {
   try {
     const token = localStorage.getItem('authToken');
@@ -11,9 +10,6 @@ const getInitialAuthState = () => {
 
     if (token && user) {
       const decoded = jwtDecode.default(token);
-
-
-      // Check if token is expired
       if (decoded.exp * 1000 < Date.now()) {
         console.log("Token expired, clearing auth...");
         localStorage.removeItem('authToken');
@@ -47,63 +43,71 @@ const getInitialAuthState = () => {
   };
 };
 
-// Async Thunk for User Login
+// Async Thunk for Login
 export const loginUser = createAsyncThunk(
   "auth/loginUser",
   async (userData, { rejectWithValue }) => {
     try {
-      const response = await axios.post(
-        "http://localhost:5000/api/auth/login", 
-        userData
-      );
+      const response = await axios.post("http://localhost:5000/api/auth/login", userData);
       localStorage.setItem('authToken', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user)); 
-      return response.data.user; 
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+      return response.data.user;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || "Login failed");
     }
   }
 );
 
-// Async Thunk for User Registration
+// Async Thunk for Register
 export const registerUser = createAsyncThunk(
   "auth/registerUser",
   async (userData, { rejectWithValue }) => {
     try {
-      const response = await axios.post(
-        "http://localhost:5000/api/auth/register", 
-        userData
-      );
-      return response.data.message || "Registration successful!"; 
+      const response = await axios.post("http://localhost:5000/api/auth/register", userData);
+      return response.data.message || "Registration successful!";
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || "Registration failed");
     }
   }
 );
 
+// ✅ Async Thunk for Google Login
+export const googleLogin = createAsyncThunk(
+  "auth/googleLogin",
+  async (token, { rejectWithValue }) => {
+    try {
+      const decoded = jwtDecode.default(token);
+      localStorage.setItem("authToken", token);
+      localStorage.setItem("user", JSON.stringify(decoded));
+      return decoded;
+    } catch (error) {
+      return rejectWithValue("Invalid Google token");
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: "auth",
-  initialState: getInitialAuthState(), 
+  initialState: getInitialAuthState(),
   reducers: {
-    // Action to handle user logout
     logout: (state) => {
       state.user = null;
       state.isAuthenticated = false;
-      state.loading = false; 
+      state.loading = false;
       state.error = null;
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user'); 
+      localStorage.removeItem("authToken");
+      localStorage.removeItem("user");
     },
     setError: (state, action) => {
       state.error = action.payload;
     },
     clearError: (state) => {
       state.error = null;
-    }
+    },
   },
   extraReducers: (builder) => {
     builder
-      // Handle loginUser async thunk lifecycle
+      // Login
       .addCase(loginUser.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -118,25 +122,46 @@ const authSlice = createSlice({
         state.loading = false;
         state.user = null;
         state.isAuthenticated = false;
-        state.error = action.payload; 
-        localStorage.removeItem('authToken'); 
-        localStorage.removeItem('user'); 
+        state.error = action.payload;
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("user");
       })
-      // Handle registerUser async thunk lifecycle
+
+      // Register
       .addCase(registerUser.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(registerUser.fulfilled, (state, action) => {
+      .addCase(registerUser.fulfilled, (state) => {
         state.loading = false;
-        state.error = null; 
+        state.error = null;
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload; 
+        state.error = action.payload;
+      })
+
+      // ✅ Google Login
+      .addCase(googleLogin.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(googleLogin.fulfilled, (state, action) => {
+        state.loading = false;
+        state.user = action.payload;
+        state.isAuthenticated = true;
+        state.error = null;
+      })
+      .addCase(googleLogin.rejected, (state, action) => {
+        state.loading = false;
+        state.user = null;
+        state.isAuthenticated = false;
+        state.error = action.payload;
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("user");
       });
   },
 });
 
-export const { logout, setError, clearError } = authSlice.actions; 
+export const { logout, setError, clearError } = authSlice.actions;
 export default authSlice.reducer;

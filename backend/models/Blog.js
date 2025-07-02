@@ -22,7 +22,8 @@ const blogSchema = new mongoose.Schema({
   content: { type: String, required: true },
   image: { type: String }, // ✅ This holds the Cloudinary URL
   isFeatured: { type: Boolean, default: false }, // ✅ Add this line
-  likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // if used
+  
+  likedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // if used
   author: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

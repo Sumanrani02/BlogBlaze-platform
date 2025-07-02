@@ -31,28 +31,46 @@ const BlogDetailPage = () => {
   const [liked, setLiked] = useState(false);
   
 
-  useEffect(() => {
-    // Fetch the blog post data from the API
-    const fetchPost = async () => {
-      try {
-        const token = localStorage.getItem("authToken");
-        const response = await axios.get(
-          `http://localhost:5000/api/posts/${id}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        setPost(response.data);
-        setLikes(response.data.likes);
-      } catch (err) {
-        setError("Failed to load blog post. Please try again later.");
-      } finally {
-        setLoading(false);
-      }
-    };
+useEffect(() => {
+  const fetchPost = async () => {
+    try {
+      const token = localStorage.getItem("authToken");
+      const response = await axios.get(
+        `http://localhost:5000/api/posts/${id}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
-    fetchPost();
-  }, []);
+      const blog = response.data;
+      setPost(blog);
+      setLikes(blog.likedBy?.length || 0);
+
+      // ✅ Fix: Check if current user liked it
+      const currentUserId = user?._id;
+     if (
+  currentUserId &&
+  blog.likedBy?.some((uid) => {
+    const likeId = typeof uid === "string" ? uid : uid._id;
+    return likeId === currentUserId;
+  })
+) {
+  setLiked(true);
+} else {
+  setLiked(false);
+}
+
+
+    } catch (err) {
+      setError("Failed to load blog post. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchPost();
+}, [id, user]); // 🧠 Include `user` in deps
+
 
   // Function to copy current page URL to clipboard
   const handleCopyLink = () => {
@@ -94,29 +112,32 @@ const BlogDetailPage = () => {
     }
   };
 
-  const handleLike = async () => {
-    if (!isAuthenticated) {
-      toast.error("Please log in to like the post.");
-      return;
-    }
+const handleLike = async () => {
+  if (!isAuthenticated) {
+    toast.error("Please log in to like the post.");
+    return;
+  }
 
-    try {
-      await axios.post(
-        `http://localhost:5000/api/posts/${id}/like`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-          },
-        }
-      );
+  try {
+    const response = await axios.post(
+      `http://localhost:5000/api/posts/${id}/like`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+        },
+      }
+    );
 
-      setLiked((prevLiked) => !prevLiked);
-      setLikes((prevLikes) => (liked ? prevLikes - 1 : prevLikes + 1));
-    } catch (err) {
-      console.error("Failed to toggle like:", err);
-    }
-  };
+    // ✅ Now 'response' is defined
+    setLiked(response.data.liked);
+    setLikes(response.data.likes.length);
+  } catch (err) {
+    toast.error("Failed to toggle like");
+    console.error("Like error:", err);
+  }
+};
+
 
   if (loading) {
     return (
@@ -205,6 +226,7 @@ const BlogDetailPage = () => {
                   <Heart
                     className="h-5 w-5"
                     fill={liked ? "currentColor" : "none"}
+                    stroke="currentColor"
                   />
                 </button>
                 <span className="text-blue-darker">{likes} Likes</span>

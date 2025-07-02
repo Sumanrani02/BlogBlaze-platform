@@ -425,7 +425,7 @@ const AdminDashboard = () => {
                               </td>
                               <td className="py-3 px-6 text-center space-x-2 flex justify-center items-center">
                                 <Link
-                                  to={`/post/${blog._id}`}
+                                  to={`/posts/${blog._id}`}
                                   target="_blank"
                                   className="p-2 bg-blue-base text-white rounded-full hover:bg-blue-dark shadow-sm transition-colors duration-200 transform hover:scale-110"
                                   title="View Blog"
