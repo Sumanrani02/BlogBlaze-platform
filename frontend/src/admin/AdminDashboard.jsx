@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import Navbar from "../layout/Navbar";
@@ -16,23 +16,21 @@ import {
   AlertCircle,
 } from "lucide-react";
 
-import axios from "axios";
+import { fetchAdminData, deleteAdminItem } from "../redux/adminSlice";
 
 const AdminDashboard = () => {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+
   const { isAuthenticated, loading: authLoading } = useSelector(
     (state) => state.auth || { isAuthenticated: true, loading: false }
   );
-  const navigate = useNavigate();
+
+  const { users, blogs, comments, loading: adminLoading, error: adminError } = useSelector(
+    (state) => state.admin
+  );
 
   const [activeTab, setActiveTab] = useState("users"); // 'users', 'blogs', 'comments'
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [pageLoading, setPageLoading] = useState(true);
-  const [pageError, setPageError] = useState(null);
-  const [users, setUsers] = useState([]);
-  const [blogs, setBlogs] = useState([]);
-  const [comments, setComments] = useState([]);
-
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalConfig, setModalConfig] = useState({
     title: "",
@@ -42,160 +40,33 @@ const AdminDashboard = () => {
     isLoading: false,
   });
 
-  const API_BASE_URL = "http://localhost:5000/api";
-
   useEffect(() => {
     if (authLoading) return;
 
     if (!isAuthenticated) {
-      toast.error(
-        "You must be logged in as an administrator to view this page."
-      );
+      toast.error("You must be logged in as an administrator to view this page.");
       navigate("/login");
     } else {
-      fetchData(activeTab);
+      dispatch(fetchAdminData(activeTab));
     }
-  }, [isAuthenticated, authLoading, navigate, activeTab]);
-
-  const fetchData = async (tab) => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const config = {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-        },
-      };
-      if (tab === "users") {
-        const response = await axios.get(`${API_BASE_URL}/admin/users`, config);
-        setUsers(response.data);
-      } else if (tab === "blogs") {
-        const response = await axios.get(`${API_BASE_URL}/admin/blogs`, config);
-       const transformedBlogs = response.data.map(blog => ({
-          _id: blog.id,
-          title: blog.title,
-          category: blog.category,
-          date: blog.date, 
-          author: { 
-            username: blog.authorName || "Unknown" 
-          }
-        }));
-        setBlogs(transformedBlogs);
-      } else if (tab === "comments") {
-        const response = await axios.get(
-          `${API_BASE_URL}/admin/comments`,
-          config
-        );
-         const transformedComments = response.data.map(comment => ({
-          _id: comment.id, 
-          text: comment.content || '', 
-          date: comment.date, 
-          author: { 
-            username: comment.authorName || "Unknown"
-          },
-          post: { 
-            _id: comment.blogId, 
-            title: comment.blogTitle || "Untitled",
-          },
-        }));
-        setComments(transformedComments);
-      }
-    } catch (err) {
-      setError(`Failed to load ${tab}. Please try again.`);
-      toast.error(`Failed to load ${tab}.`);
-    } finally {
-      setLoading(false);
-      setPageLoading(false);
-    }
-  };
+  }, [isAuthenticated, authLoading, navigate, activeTab, dispatch]);
 
   const handleDelete = (itemType, itemId) => {
     let title = "";
     let message = "";
-    let confirmAction;
 
     if (itemType === "user") {
       title = "Delete User";
       message =
         "Are you absolutely sure you want to delete this user? This action is irreversible and all their associated data (blogs, comments) will be permanently removed.";
-      confirmAction = async () => {
-        setModalConfig((prev) => ({ ...prev, isLoading: true }));
-        try {
-          const config = {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-            },
-          };
-
-          await axios.delete(`${API_BASE_URL}/admin/users/${itemId}`, config);
-          setUsers((prevUsers) =>
-            prevUsers.filter((user) => user._id !== itemId)
-          );
-          toast.success("User deleted successfully.");
-        } catch (err) {
-          console.error("Delete user error:", err);
-          toast.error(err.response?.data?.message || "Failed to delete user.");
-        } finally {
-          setIsModalOpen(false);
-          setModalConfig((prev) => ({ ...prev, isLoading: false }));
-        }
-      };
     } else if (itemType === "blog") {
       title = "Delete Blog";
       message =
         "Are you absolutely sure you want to delete this blog post? This action is irreversible and all its associated comments will be permanently removed.";
-      confirmAction = async () => {
-        setModalConfig((prev) => ({ ...prev, isLoading: true }));
-        try {
-          const config = {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-            },
-          };
-          await axios.delete(`${API_BASE_URL}/admin/blogs/${itemId}`, config);
-          setBlogs((prevBlogs) =>
-            prevBlogs.filter((blog) => blog._id !== itemId)
-          );
-          toast.success("Blog deleted successfully.");
-        } catch (err) {
-          console.error("Delete blog error:", err);
-          toast.error(err.response?.data?.message || "Failed to delete blog.");
-        } finally {
-          setIsModalOpen(false);
-          setModalConfig((prev) => ({ ...prev, isLoading: false }));
-        }
-      };
     } else if (itemType === "comment") {
       title = "Delete Comment";
       message =
         "Are you absolutely sure you want to delete this comment? This action is irreversible.";
-      confirmAction = async () => {
-        setModalConfig((prev) => ({ ...prev, isLoading: true }));
-        const config = {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-          },
-        };
-        try {
-          await axios.delete(
-            `${API_BASE_URL}/admin/comments/${itemId}`,
-            config
-          );
-          setComments((prevComments) =>
-            prevComments.filter((comment) => comment._id !== itemId)
-          );
-          toast.success("Comment deleted successfully.");
-        } catch (err) {
-          console.error("Delete comment error:", err);
-          toast.error(
-            err.response?.data?.message || "Failed to delete comment."
-          );
-        } finally {
-          setIsModalOpen(false);
-          setModalConfig((prev) => ({ ...prev, isLoading: false }));
-        }
-      };
     }
 
     setModalConfig({
@@ -204,7 +75,15 @@ const AdminDashboard = () => {
       confirmText: `Yes, Delete ${
         itemType.charAt(0).toUpperCase() + itemType.slice(1)
       }`,
-      onConfirm: confirmAction,
+      onConfirm: async () => {
+        setModalConfig((prev) => ({ ...prev, isLoading: true }));
+        try {
+          await dispatch(deleteAdminItem({ itemType, itemId })).unwrap();
+        } finally {
+          setIsModalOpen(false);
+          setModalConfig((prev) => ({ ...prev, isLoading: false }));
+        }
+      },
       isLoading: false,
     });
     setIsModalOpen(true);
@@ -215,7 +94,8 @@ const AdminDashboard = () => {
     setModalConfig((prev) => ({ ...prev, isLoading: false }));
   };
 
-  if (pageLoading || authLoading || (!isAuthenticated && !authLoading)) {
+  // Check authentication and loading states
+  if (authLoading || (!isAuthenticated && !authLoading)) {
     return (
       <>
         <Navbar />
@@ -229,33 +109,9 @@ const AdminDashboard = () => {
       </>
     );
   }
-
-  if (pageError) {
-    return (
-      <>
-        <Navbar />
-        <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-red-50 to-orange-50 font-inter p-4">
-          <p className="text-red-700 text-2xl font-extrabold text-center">
-            Access Denied or Error!
-          </p>
-          <p className="text-red-500 text-lg mt-3 text-center">{pageError}</p>
-          <p className="text-gray-600 mt-5 text-center">
-            Please ensure you are logged in as an administrator.
-          </p>
-          <button
-            onClick={() => navigate("/login")}
-            className="mt-6 px-8 py-3 bg-blue-base text-white font-semibold rounded-full shadow-lg hover:bg-blue-dark transition-all duration-300 transform hover:scale-105"
-          >
-            Go to Login
-          </button>
-        </div>
-        <Footer />
-      </>
-    );
-  }
-
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-100 via-pink-50 to-blue-50 font-inter relative overflow-hidden">
+      {/* Background blobs */}
       <div className="absolute bottom-0 left-1/4 w-64 h-64 bg-pink-100 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
       <div className="absolute bottom-1/4 right-0 w-64 h-64 bg-blue-100 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-6000"></div>
 
@@ -264,7 +120,7 @@ const AdminDashboard = () => {
       <main className="flex-grow container mx-auto py-16 px-4 sm:px-6 lg:px-8 max-w-6xl z-10 relative">
         <h1 className="text-6xl font-extrabold text-blue-darker mb-12 text-center leading-tight tracking-wider drop-shadow-lg animate-fade-in">
           <ShieldCheck className="inline-block h-16 w-16 mr-4 text-green-base" />{" "}
-          Welcome   Admin
+          Welcome Admin
         </h1>
 
         {/* Tab Navigation */}
@@ -306,18 +162,18 @@ const AdminDashboard = () => {
         <div className="bg-white rounded-b-3xl shadow-2xl p-8 md:p-12 border-t-0 border-blue-base min-h-[500px] relative z-20 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-pink-50/50 opacity-40 rounded-b-3xl"></div>{" "}
           {/* Gradient for content area */}
-          {loading ? (
+          {adminLoading ? (
             <div className="flex justify-center items-center h-full min-h-[300px] relative z-10">
               <Spinner className="h-16 w-16 text-blue-base animate-spin-slow" />
               <p className="ml-4 text-2xl font-bold text-blue-darker animate-pulse">
                 Loading {activeTab} data...
               </p>
             </div>
-          ) : error ? (
+          ) : adminError ? (
             <div className="flex flex-col justify-center items-center h-full min-h-[300px] relative z-10">
               <AlertCircle className="h-20 w-20 text-red-500 mb-4" />
               <p className="text-red-600 text-xl font-semibold text-center">
-                {error}
+                {adminError}
               </p>
               <p className="text-gray-600 mt-2 text-center">
                 Please try switching tabs or refreshing the page.
@@ -339,7 +195,7 @@ const AdminDashboard = () => {
                               Username
                             </th>
                             <th className="py-4 px-6">Email</th>
-                            <th className="py-4 px-6">Role</th>{" "}
+                            <th className="py-4 px-6">Role</th>
                             <th className="py-4 px-6">Member Since</th>
                             <th className="py-4 px-6 rounded-tr-xl text-center">
                               Actions
@@ -465,7 +321,7 @@ const AdminDashboard = () => {
                           <tr className="bg-blue-light text-offwhite text-left text-sm font-semibold uppercase tracking-wider rounded-t-xl">
                             <th className="py-4 px-6 rounded-tl-xl">Comment</th>
                             <th className="py-4 px-6">Author</th>
-                            <th className="py-4 px-6">On Blog</th>{" "}
+                            <th className="py-4 px-6">On Blog</th>
                             <th className="py-4 px-6">Date</th>
                             <th className="py-4 px-6 rounded-tr-xl text-center">
                               Actions

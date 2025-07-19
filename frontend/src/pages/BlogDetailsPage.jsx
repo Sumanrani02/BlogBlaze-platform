@@ -14,63 +14,62 @@ import {
 import Navbar from "../layout/Navbar";
 import Footer from "../layout/Footer";
 import Spinner from "../component/common/Spinner";
-import axios from "axios";
 import { useParams } from "react-router-dom";
 import toast from "react-hot-toast";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchBlogById } from "../redux/blogSlice";
+import { likePost, postComment } from "../redux/commentSlice";
 
 const BlogDetailPage = () => {
   const { isAuthenticated, user } = useSelector((state) => state.auth);
   const { id } = useParams();
-  const [post, setPost] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const dispatch = useDispatch();
+  const { blog, loading, error } = useSelector((state) => state.blogs);
+  const { comments } = useSelector((state) => state.comments);
   const [showCopiedMessage, setShowCopiedMessage] = useState(false);
   const [newComment, setNewComment] = useState("");
-  const [likes, setLikes] = useState(post?.likes || 0);
+  const [likes, setLikes] = useState(0);
   const [liked, setLiked] = useState(false);
-  
+  const [comment, setComment] = useState([]);
 
-useEffect(() => {
-  const fetchPost = async () => {
-    try {
-      const token = localStorage.getItem("authToken");
-      const response = await axios.get(
-        `http://localhost:5000/api/posts/${id}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      const blog = response.data;
-      setPost(blog);
-      setLikes(blog.likedBy?.length || 0);
-
-      // ✅ Fix: Check if current user liked it
-      const currentUserId = user?._id;
-     if (
-  currentUserId &&
-  blog.likedBy?.some((uid) => {
-    const likeId = typeof uid === "string" ? uid : uid._id;
-    return likeId === currentUserId;
-  })
-) {
-  setLiked(true);
-} else {
-  setLiked(false);
-}
-
-
-    } catch (err) {
-      setError("Failed to load blog post. Please try again later.");
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (id) {
+      dispatch(fetchBlogById(id));
     }
+  }, [dispatch, id]);
+
+  useEffect(() => {
+    if (blog) {
+      setLikes(blog.likedBy?.length || 0);
+      setComment(blog.comments || []);
+
+      // Check if current user liked the post
+      if (user?._id && blog.likedBy) {
+        const hasLiked = blog.likedBy.some((uid) => {
+          const likeId = typeof uid === "string" ? uid : uid._id;
+          return likeId === user._id;
+        });
+        setLiked(hasLiked);
+      }
+    }
+  }, [blog, user]);
+
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        dispatch(clearError());
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error, dispatch]);
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
   };
-
-  fetchPost();
-}, [id, user]); // 🧠 Include `user` in deps
-
 
   // Function to copy current page URL to clipboard
   const handleCopyLink = () => {
@@ -86,58 +85,52 @@ useEffect(() => {
       return;
     }
 
-    if (!newComment.trim()) return;
+    if (!newComment.trim()) {
+      toast.error("Please enter a comment.");
+      return;
+    }
 
     try {
-      console.log("Token being sent:", localStorage.getItem("authToken"));
-
-      const response = await axios.post(
-        `http://localhost:5000/api/posts/${id}/comments`,
-        { comment: newComment },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-          },
-        }
+      const resultAction = await dispatch(
+        postComment({ postId: id, text: newComment })
       );
 
-      setPost((prev) => ({
-        ...prev,
-        comments: [...prev.comments, response.data.comment],
-      }));
-      setNewComment("");
+      if (postComment.fulfilled.match(resultAction)) {
+        const comment = resultAction.payload;
+        setComment((prev) => [...prev, comment]);
+        setNewComment("");
+        toast.success("Comment posted successfully!");
+      } else {
+        throw new Error(resultAction.payload || "Failed to post comment");
+      }
     } catch (err) {
       console.error("Failed to post comment:", err);
       toast.error("Failed to post comment. Please try again.");
     }
   };
 
-const handleLike = async () => {
-  if (!isAuthenticated) {
-    toast.error("Please log in to like the post.");
-    return;
-  }
+  const handleLike = async () => {
+    if (!isAuthenticated) {
+      toast.error("Please log in to like the post.");
+      return;
+    }
 
-  try {
-    const response = await axios.post(
-      `http://localhost:5000/api/posts/${id}/like`,
-      {},
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-        },
+    try {
+      const resultAction = await dispatch(likePost(id));
+
+      if (likePost.fulfilled.match(resultAction)) {
+        const { liked, likes } = resultAction.payload;
+        setLiked(liked);
+        setLikes(likes?.length || 0);
+        toast.success(liked ? "Post liked!" : "Post unliked!");
+      } else {
+        throw new Error(resultAction.payload || "Failed to like");
       }
-    );
-
-    // ✅ Now 'response' is defined
-    setLiked(response.data.liked);
-    setLikes(response.data.likes.length);
-  } catch (err) {
-    toast.error("Failed to toggle like");
-    console.error("Like error:", err);
-  }
-};
-
+    } catch (err) {
+      console.error("Failed to like:", err);
+      toast.error("Failed to like the post.");
+    }
+  };
 
   if (loading) {
     return (
@@ -165,7 +158,7 @@ const handleLike = async () => {
     );
   }
 
-  if (!post) {
+  if (!blog) {
     return (
       <>
         <Navbar />
@@ -186,8 +179,8 @@ const handleLike = async () => {
         <article className="bg-white rounded-xl shadow-lg p-6 md:p-10 border border-pink-base">
           {/* Post Image */}
           <img
-            src={post.image}
-            alt={post.title}
+            src={blog.image}
+            alt={blog.title}
             className="w-full h-80 object-cover rounded-lg mb-8 shadow-md"
             onError={(e) => {
               e.target.onerror = null;
@@ -199,21 +192,21 @@ const handleLike = async () => {
           {/* Post Header */}
           <header className="mb-8 border-b pb-6 border-pink-light">
             <h1 className="text-4xl md:text-5xl font-extrabold text-blue-darker mb-4 leading-tight">
-              {post.title}
+              {blog.title}
             </h1>
             <div className="flex flex-wrap items-center text-blue-darker text-sm gap-4">
               <div className="flex items-center">
                 <User className="h-4 w-4 mr-1 text-blue-light" />
-                <span>By {post.author?.username || "Unknown Author"}</span>
+                <span>By {blog.author?.username || "Unknown Author"}</span>
               </div>
               <div className="flex items-center">
                 <Calendar className="h-4 w-4 mr-1 text-blue-light" />
-                <span>{post.date}</span>
+                <span>{blog.date}</span>
               </div>
               <div className="flex items-center">
                 <Tag className="h-4 w-4 mr-1 text-blue-light" />
                 <span className="text-blue-base bg-pink-base px-2 py-0.5 rounded-full text-xs font-semibold">
-                  {post.category}
+                  {blog.category}
                 </span>
               </div>
               <div className="flex items-center gap-2">
@@ -233,7 +226,7 @@ const handleLike = async () => {
               </div>
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
-              {post.tags.map((tag) => (
+              {blog.tags.map((tag) => (
                 <span
                   key={tag}
                   className="text-blue-darker bg-pink-light px-3 py-1 rounded-full text-xs font-medium border border-pink-base"
@@ -247,7 +240,7 @@ const handleLike = async () => {
           {/* Post Content - Using dangerouslySetInnerHTML for rich text */}
           <div
             className="prose prose-lg max-w-none text-blue-dark leading-relaxed overflow-x-hidden"
-            dangerouslySetInnerHTML={{ __html: post.content }}
+            dangerouslySetInnerHTML={{ __html: blog.content }}
           />
 
           {/* Social Share and Copy Link */}
@@ -267,7 +260,7 @@ const handleLike = async () => {
               <a
                 href={`https://twitter.com/intent/tweet?url=${
                   window.location.href
-                }&text=${encodeURIComponent(post.title)}`}
+                }&text=${encodeURIComponent(blog.title)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-3 bg-blue-lighter text-blue-darker rounded-full hover:bg-blue-light transition-colors duration-200 shadow-md"
@@ -277,7 +270,7 @@ const handleLike = async () => {
               <a
                 href={`https://www.linkedin.com/shareArticle?mini=true&url=${
                   window.location.href
-                }&title=${encodeURIComponent(post.title)}`}
+                }&title=${encodeURIComponent(blog.title)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-3 bg-blue-base text-white rounded-full hover:bg-blue-dark transition-colors duration-200 shadow-md"
@@ -302,11 +295,11 @@ const handleLike = async () => {
           <section className="mt-12 pt-8 border-t border-pink-base">
             <h3 className="text-3xl font-extrabold text-blue-darker mb-6 flex items-center">
               <MessageSquare className="h-7 w-7 mr-2 text-blue-light" />{" "}
-              Comments ({post.comments.length})
+              Comments ({blog.comments.length})
             </h3>
             <div className="space-y-6">
-              {post.comments.length > 0 ? (
-                post.comments.map((comment) => (
+              {comments.length > 0 ? (
+                comment.map((comment) => (
                   <div
                     key={comment._id}
                     className="bg-pink-light p-5 rounded-lg shadow-sm border border-pink-base"

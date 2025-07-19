@@ -2,7 +2,6 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 import * as jwtDecode from 'jwt-decode';
 
-// Utility function to get initial state from localStorage
 const getInitialAuthState = () => {
   try {
     const token = localStorage.getItem('authToken');
@@ -71,20 +70,6 @@ export const registerUser = createAsyncThunk(
   }
 );
 
-// ✅ Async Thunk for Google Login
-export const googleLogin = createAsyncThunk(
-  "auth/googleLogin",
-  async (token, { rejectWithValue }) => {
-    try {
-      const decoded = jwtDecode.default(token);
-      localStorage.setItem("authToken", token);
-      localStorage.setItem("user", JSON.stringify(decoded));
-      return decoded;
-    } catch (error) {
-      return rejectWithValue("Invalid Google token");
-    }
-  }
-);
 
 const authSlice = createSlice({
   name: "auth",
@@ -140,26 +125,6 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-
-      // ✅ Google Login
-      .addCase(googleLogin.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(googleLogin.fulfilled, (state, action) => {
-        state.loading = false;
-        state.user = action.payload;
-        state.isAuthenticated = true;
-        state.error = null;
-      })
-      .addCase(googleLogin.rejected, (state, action) => {
-        state.loading = false;
-        state.user = null;
-        state.isAuthenticated = false;
-        state.error = action.payload;
-        localStorage.removeItem("authToken");
-        localStorage.removeItem("user");
-      });
   },
 });
 

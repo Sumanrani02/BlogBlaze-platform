@@ -4,55 +4,45 @@ import { BookOpen, Rss, ArrowRight, Sparkles, Star } from "lucide-react";
 import Footer from "../layout/Footer";
 import BlogPostCard from "../blog/BlogPostCard";
 import bgImg from "../assets/hero-section-bg3.jpg";
-import axios from "axios";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  fetchFeaturedPosts,
+  fetchRecentPosts,
+  subscribeToNewsletter,
+} from "../redux/blogSlice";
 
 const HomePage = () => {
-  const [featuredPosts, setFeaturedPosts] = useState([]);
-  const [recentPosts, setRecentPosts] = useState([]);
+  const { featured, recent, loading, newsletterSuccess, newsletterError } =
+    useSelector((state) => state.blogs);
+  const dispatch = useDispatch();
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    // Fetch featured posts
-    axios
-      .get("http://localhost:5000/api/posts/featured")
-      .then((response) => setFeaturedPosts(response.data))
-      .catch((error) => console.error("Error fetching featured posts:", error));
+    dispatch(fetchFeaturedPosts());
+    dispatch(fetchRecentPosts());
+    if (newsletterSuccess || newsletterError) {
+      const timer = setTimeout(() => {}, 3000);
+      setIsSubmitting(true);
+      return () => {
+        clearTimeout(timer);
+        setIsSubmitting(false);
+      };
+    }
+  }, [dispatch, newsletterSuccess, newsletterError]);
 
-    // Fetch recent posts
-    axios
-      .get("http://localhost:5000/api/posts/recent")
-      .then((response) => setRecentPosts(response.data))
-      .catch((error) => console.error("Error fetching recent posts:", error));
-  }, []);
-
-  // Handle newsletter subscription
   const handleSubscribe = () => {
-    if (!email) {
+    if (!email.trim()) {
       alert("Please enter a valid email address.");
       return;
     }
 
-    setIsSubmitting(true);
-    axios
-      .post("http://localhost:5000/api/newsletter/subscribe", { email })
-      .then((response) => {
-        alert("Successfully subscribed!");
-        setEmail("");
-      })
-      .catch((error) => {
-        alert("Subscription failed. Please try again.");
-        console.error("Subscription error:", error);
-      })
-      .finally(() => setIsSubmitting(false));
+    dispatch(subscribeToNewsletter(email));
+    setEmail("");
   };
   return (
     <div className="min-h-screen bg-offwhite flex flex-col font-inter">
-      {/* Navigation Bar */}
       <Navbar />
-
-      {/* Hero Section */}
-
       <section
         className=" text-pink-base py-20 px-4 sm:px-6 lg:px-8 shadow-inner"
         style={{
@@ -87,9 +77,15 @@ const HomePage = () => {
             <Star className="h-9 w-9 mr-3 text-pink-darker" /> Featured Posts
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-            {featuredPosts.map((post) => (
-              <BlogPostCard key={post._id} post={post} isFeatured={true} />
-            ))}
+            {loading ? (
+              <p className="text-center col-span-full text-lg font-semibold text-blue-600">
+                Loading...
+              </p>
+            ) : (
+              featured.map((post) => (
+                <BlogPostCard key={post._id} post={post} isFeatured={true} />
+              ))
+            )}
           </div>
         </div>
       </section>
@@ -101,9 +97,15 @@ const HomePage = () => {
             <BookOpen className="h-9 w-9 mr-3 text-green-base" /> Recent Posts
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {recentPosts.map((post) => (
-              <BlogPostCard key={post._id} post={post} isFeatured={false} />
-            ))}
+            {loading ? (
+              <p className="text-center col-span-full text-lg font-semibold text-blue-600">
+                Loading...
+              </p>
+            ) : (
+              recent.map((post) => (
+                <BlogPostCard key={post._id} post={post} isFeatured={false} />
+              ))
+            )}
           </div>
         </div>
       </section>

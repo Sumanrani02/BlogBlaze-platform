@@ -1,43 +1,39 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Search, Tag, ListFilter } from "lucide-react";
+import { Search } from "lucide-react";
 import Navbar from "../layout/Navbar";
 import Spinner from "../component/common/Spinner";
 import Footer from "../layout/Footer";
 import BlogPostCard from "../blog/BlogPostCard";
-import axios from "axios";
+import { useSelector, useDispatch } from "react-redux";
+import { fetchBlogs, clearError } from "../redux/blogSlice";
 
 const AllPostsPage = () => {
-  const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const dispatch = useDispatch();
+  const { blogs, loading, error } = useSelector((state) => state.blogs);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    const fetchPosts = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await axios.get("http://localhost:5000/api/posts");
-        setPosts(response.data);
-      } catch (err) {
-        setError("Failed to load blog posts. Please try again later.");
-        console.error("Error fetching posts:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
+    dispatch(fetchBlogs());
+  }, [dispatch]);
 
-    fetchPosts();
-  }, []);
+
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        dispatch(clearError());
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error, dispatch]);
 
   const categories = useMemo(() => {
-    const uniqueCategories = new Set(posts.map((post) => post.category));
+    const uniqueCategories = new Set((blogs || []).map((post) => post.category));
     return ["All", ...Array.from(uniqueCategories).sort()];
-  }, [posts]);
+  }, [blogs]);
 
   const filteredPosts = useMemo(() => {
-    let filtered = posts;
+    let filtered = blogs || [];
 
     if (selectedCategory !== "All") {
       filtered = filtered.filter(
@@ -64,7 +60,7 @@ const AllPostsPage = () => {
       });
     }
     return filtered;
-  }, [posts, selectedCategory, searchQuery]);
+  }, [blogs, selectedCategory, searchQuery]);
 
   if (loading) {
     return (
@@ -122,8 +118,7 @@ const AllPostsPage = () => {
                 htmlFor="category-select"
                 className="text-blue-darker font-medium"
               >
-               Filter By 
-               Category
+                Filter By Category
               </label>
               <select
                 id="category-select"

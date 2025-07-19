@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import axios from "axios";
 import { Plus, Tag, List, CheckCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
@@ -7,20 +6,21 @@ import Navbar from "../layout/Navbar";
 import RichTextEditor from "../blog/RichTextEditor";
 import Spinner from "../component/common/Spinner";
 import Footer from "../layout/Footer";
+import { useDispatch, useSelector } from "react-redux";
+import { createBlog, clearError, clearSuccess } from "../redux/blogSlice";
 
 const CreateBlogPost = () => {
+  const dispatch = useDispatch();
   const navigate = useNavigate();
-
+  const { loading, error, successMessage } = useSelector(
+    (state) => state.blogs
+  );
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
   const [tags, setTags] = useState("");
   const [content, setContent] = useState("");
   const [featuredImage, setFeaturedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
-
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState(null);
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -35,69 +35,68 @@ const CreateBlogPost = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
-    setSuccessMessage(null);
 
-    if (!title || !content || !category || !featuredImage) {
-      setError(
-        "Please fill in all required fields (Title, Category, Content, Featured Image)."
-      );
-      setLoading(false);
+    dispatch(clearError());
+    dispatch(clearSuccess());
+
+    if (!title.trim()) {
+      toast.error("Title is required");
+      return;
+    }
+
+    if (!content.trim() || content.trim() === "<p><br></p>") {
+      toast.error("Content is required");
+      return;
+    }
+
+    if (!category.trim()) {
+      toast.error("Category is required");
       return;
     }
 
     try {
-      const formData = new FormData();
-      formData.append("title", title);
-      formData.append("category", category);
-      formData.append(
-        "tags",
-        tags
-          .split(",")
-          .map((tag) => tag.trim())
-          .filter((tag) => tag !== "")
-      );
-      formData.append("content", content);
-      formData.append("featuredImage", featuredImage);
+      let blogData;
 
-      console.log("Token sent:", localStorage.getItem("authToken"));
+      if (featuredImage) {
+        // Create FormData for file upload
+        const formData = new FormData();
+        formData.append("title", title.trim());
+        formData.append("content", content);
+        formData.append("category", category.trim());
+        formData.append(
+          "tags",
+          tags
+            .split(",")
+            .map((tag) => tag.trim())
+            .filter((tag) => tag !== "")
+            .join(",")
+        );
+        formData.append("featuredImage", featuredImage);
 
+        blogData = formData;
+      } 
+     
+      const result = await dispatch(createBlog(blogData));
 
-      const response = await axios.post(
-        "http://localhost:5000/api/posts",
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-          },
-        }
-      );
+      if (createBlog.fulfilled.match(result)) {
+        toast.success("Blog post published successfully!");
 
-      setSuccessMessage(
-        response.data.message || "Blog post created successfully!"
-      );
-      toast.success("Posted successfully!");
-      setTitle("");
-      setCategory("");
-      setTags("");
-      setContent("");
-      setFeaturedImage(null);
-      setImagePreview(null);
+        setTitle("");
+        setCategory("");
+        setTags("");
+        setContent("");
+        setFeaturedImage(null);
+        setImagePreview(null);
 
-      // Redirect to the new post's detail page after a short delay
-      setTimeout(() => {
-        navigate(`/posts`);
-      }, 2000);
-    } catch (err) {
-      console.error("Error creating blog post:", err);
-      setError(
-        err.response?.data?.message ||
-          "Failed to create blog post. Please try again."
-      );
-    } finally {
-      setLoading(false);
+        setTimeout(() => {
+          navigate("/posts");
+        }, 1500);
+      } else {
+        toast.error(result.payload || "Failed to create blog post");
+      }
+    } catch (error) {
+      console.error("Error creating blog post:", error);
+      toast.error("An unexpected error occurred while creating the blog post.");
     }
   };
 
