@@ -81,7 +81,7 @@ export const resetPassword = createAsyncThunk(
     try {
       const response = await axiosInstance.post(
         `/api/auth/reset-password/${token}`,
-        { newPassword }
+        { password: newPassword }
       );
       toast.success("Password reset successfully!");
       return response.data;

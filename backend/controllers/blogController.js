@@ -151,13 +151,19 @@ export const getFeaturedPosts = async (req, res) => {
 
 
 // Get Recent Posts
+// Get Recent Posts
 export const getRecentPosts = async (req, res) => {
   try {
-    const posts = await Blog.find().sort({ createdAt: -1 }).limit(6);
+    const posts = await Blog.find()
+      .sort({ createdAt: -1 })
+      .limit(6)
+      .populate("author", "username"); // ✅ FIXED
+
     res.json(posts);
   } catch (err) {
-    console.error("Error in getRecentPosts:", err.stack); // ✅ log full stack
+    console.error("Error in getRecentPosts:", err.stack);
     res.status(500).json({ message: "Failed to fetch recent posts" });
   }
 };
+
 

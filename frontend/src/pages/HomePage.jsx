@@ -102,6 +102,7 @@ const HomePage = () => {
                 Loading...
               </p>
             ) : (
+              
               recent.map((post) => (
                 <BlogPostCard key={post._id} post={post} isFeatured={false} />
               ))
